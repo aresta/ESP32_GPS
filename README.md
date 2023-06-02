@@ -10,7 +10,7 @@ The device elements:
 - Micro-sd card with the maps data.
 - Vectorial maps data from OpenStreetMap. Basically polylines and polygons to display the roads, paths, rivers, buildings, forest, etc.
 
-I have already a functional prototype that works.
+I have already built a functional prototype that works.
 
 Here in the protoboard:
 
@@ -22,11 +22,11 @@ And a more compact and robust prototype to test outside:
 
 I'll post the wiring.
 
-The prototype is already functional. It's shows your position in the map with the little triangle and it refresh as you move. 
+The prototype is already functional. It's shows your position in the map with the little triangle, and it refresh as you move. 
 
-It loads a map in a custom file stored in the SD card. The map is created out of a Openstreetmap PBF extract and clipped to a few square kms for testing.
+It loads a map in a custom file stored in the SD card. The map is created out of an Openstreetmap PBF extract and clipped to a few square kms for testing. The map file creation is done in the computer with some scripts and then copied to the SD card.
 
-There is still work to do in several different areas.  Any help is wellcome!
+There is still work to do in several different areas.  Any help is welcome!
 
 - Optimize several areas related to maps storage and memory.
 - A PCB, once the design is completed.
