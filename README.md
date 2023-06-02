@@ -28,10 +28,10 @@ It loads a map in a custom file stored in the SD card. The map is created out of
 
 There is still work to do in several different areas.  Any help is welcome!
 
-- Optimize several areas related to maps storage and memory.
+- Optimize several aspects related to maps storage and memory.
 - A PCB, once the design is completed.
 - Some buttons and user interface.
-- Check with IPS smaller display and round (clock) displays.
+- Test with IPS smaller displays and round (clock) displays.
 - A proper plastic housing.
 - Battery power. AAA or small Li-XX batteries.
 - Replace the ESP32 devkit by an ESP32 wroom or wrover
