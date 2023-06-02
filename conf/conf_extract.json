@@ -1,0 +1,24 @@
+{
+    "lines": {  
+        "feature_types" : {
+            "highway" : {
+                "path" : ["sac_scale", "trail_visibility"],
+                "track" : ["tracktype"],
+                "residential" : ["width"],
+                "living_street" : [],
+                "pedestrian" : []
+            },
+            "waterway": ["stream","drain","river","canal"]
+        },
+        "tags" : "railway" 
+    },
+    "polygons": {
+        "feature_types" : {
+            "building": [],
+            "amenity": [],
+            "leisure": [],
+            "natural": [],
+            "landuse": []
+        }
+    }
+}

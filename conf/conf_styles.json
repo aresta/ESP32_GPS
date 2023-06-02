@@ -1,0 +1,51 @@
+{
+    "lines": [
+        {
+            "features" : ["highway.path"],
+            "color": "red",
+            "width": 1
+        },
+        {
+            "features" : ["highway.track"],
+            "color": "orange",
+            "width": 3
+        },
+        {
+            "features" : ["highway.residential", "highway.living_street", "highway.pedestrian"],
+            "color": "white",
+            "width": 4
+        },
+        {
+            "features" : ["waterway.stream","waterway.river","waterway.drain"],
+            "color": "cyan",
+            "width": 1
+        },
+        {
+            "features" : ["railway.rail"],
+            "color": "black",
+            "width": 1
+        }
+    ],
+    "polygons": [
+        {
+            "features" : ["building","landuse.brownfield"],
+            "color": "200,200,200"
+        },
+        {
+            "features" : ["amenity"],
+            "color": "210,210,215"
+        },
+        {
+            "features" : ["natural","landuse.grass","leisure.park","leisure.garden","leisure.pitch"],
+            "color": "190,240,190"
+        },
+        {
+            "features" : ["landuse.forest","natural.wood"],
+            "color": "160,225,160"
+        },
+        {
+            "features" : ["landuse.farmland"],
+            "color": "205,245,210"
+        }
+    ]
+}
