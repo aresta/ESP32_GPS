@@ -11,9 +11,13 @@ HardwareSerial SerialGPS(2);
 MemMap mmap;
 ViewPort viewPort;
 
-void test()
+void display_pos( Coord& pos)
 {
-    while(true);
+    tft.fillRect(0, 0, 240, 25, TFT_YELLOW);
+    tft.setCursor(5,5,2);
+    tft.print(pos.lng, 4);
+    tft.print(" "); tft.print(pos.lat, 4);
+    tft.print(" Sats: "); tft.print(pos.satellites);
 }
 
 void setup()
@@ -66,18 +70,18 @@ void setup()
     draw( tft, viewPort, mmap);
 }
 
+double prev_lat=500, prev_lng=500;
 void loop()
 {
     Coord pos = getPosition( SerialGPS );
-    // if( pos.isValid && pos.isUpdated){
-    if( pos.isValid && pos.isUpdated){
-        viewPort.setCenter( pos.getPoint32());
-        draw( tft, viewPort, mmap);
+    if( pos.isValid && 
+        abs(pos.lat-prev_lat) > 0.00005 &&
+        abs(pos.lng-prev_lng) > 0.00005 ){
+            viewPort.setCenter( pos.getPoint32());
+            draw( tft, viewPort, mmap);
+            prev_lat = pos.lat;
+            prev_lng = pos.lng;
     }   
-    tft.fillRect(0, 0, 240, 25, TFT_YELLOW);
-    tft.setCursor(5,5,2);
-    tft.print(pos.lng, 4);
-    tft.print(" "); tft.print(pos.lat, 4);
-    tft.print(" Sats: "); tft.print(pos.satellites);
-    delay(5000);
+    display_pos( pos);
+    delay(4000);
 }
