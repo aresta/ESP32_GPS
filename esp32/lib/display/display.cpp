@@ -27,7 +27,7 @@ Point16 toScreenCoords( Point16 p, Point16 screen_center)
     );
 }
 
-void draw( TFT_eSPI tft, ViewPort viewPort, MemMap mmap)
+void draw( TFT_eSPI& tft, ViewPort& viewPort, MemMap& mmap)
 {
     log_d("Polylines: %i", mmap.polylines.size());
     Point32 screen_center_mc = viewPort.center - mmap.features_offset;  // screen center with features coordinates
@@ -41,6 +41,7 @@ void draw( TFT_eSPI tft, ViewPort viewPort, MemMap mmap)
             polyline.color == "green" ? GREEN : 
             polyline.color == "cyan" ? CYAN : 
             polyline.color == "orange" ? ORANGE : 
+            polyline.color == "yellow" ? TFT_YELLOW: 
             BLACK;
         for( int i=0; i < (polyline.points.size() - 1); i++){
             Point16 p1 = polyline.points[i];

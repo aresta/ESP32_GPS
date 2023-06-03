@@ -6,8 +6,8 @@ class TFT_eSPI;
 
 #define SCREEN_WIDTH 240        // tft.width()
 #define SCREEN_HEIGHT 320       // tft.height()
-#define SCREEN_BUFFER_SIZE 6    // buffer around the displayed area to keep feature in memory
-#define PIXEL_SIZE 2 // in meters
+#define SCREEN_BUFFER_SIZE 4    // buffer around the displayed area to keep feature in memory
+#define PIXEL_SIZE 3 // in meters
 
 const uint16_t WHITE    =   0xFFFF;
 const uint16_t BLACK    =   0x0000;
@@ -25,6 +25,6 @@ struct ViewPort {
     BBox bbox;
 };
 
-void draw( TFT_eSPI tft, ViewPort display, MemMap features);
+void draw( TFT_eSPI& tft, ViewPort& display, MemMap& features);
 
 #endif

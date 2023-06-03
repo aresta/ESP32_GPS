@@ -70,7 +70,7 @@ void loop()
 {
     Coord pos = getPosition( SerialGPS );
     // if( pos.isValid && pos.isUpdated){
-    if( pos.isValid ){
+    if( pos.isValid && pos.isUpdated){
         viewPort.setCenter( pos.getPoint32());
         draw( tft, viewPort, mmap);
     }   
