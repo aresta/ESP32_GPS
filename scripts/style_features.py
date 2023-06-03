@@ -15,7 +15,7 @@ def process_features( features, styles ):
     for feature in features:
         feature_type = feature['type']
         feature_type_group = feature['type'].split('.')[0]
-        feature_color = None # default
+        feature_color = 'pink' # default
         feature_width = None   # default
         for style_item in styles:
             if feature_type in style_item['features'] or feature_type_group in style_item['features']:

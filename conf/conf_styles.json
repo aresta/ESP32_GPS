@@ -39,23 +39,23 @@
     "polygons": [
         {
             "features" : ["building","landuse.brownfield"],
-            "color": "200,200,200"
+            "color": "grayclear"
         },
         {
             "features" : ["amenity"],
-            "color": "210,210,215"
+            "color": "grayclear2"
         },
         {
             "features" : ["natural","landuse.grass","leisure.park","leisure.garden","leisure.pitch"],
-            "color": "190,240,190"
+            "color": "greenclear"
         },
         {
             "features" : ["landuse.forest","natural.wood"],
-            "color": "160,225,160"
+            "color": "greenclear2"
         },
         {
             "features" : ["landuse.farmland"],
-            "color": "205,245,210"
+            "color": "greenclear"
         }
     ]
 }
