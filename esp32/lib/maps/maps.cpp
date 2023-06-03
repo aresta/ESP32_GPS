@@ -71,8 +71,6 @@ void get_map_features( MemMap& mmap)
         offset_y.substring(10).toInt());
     log_d("features_offset: (%i,%i)", mmap.features_offset.x, mmap.features_offset.y);
     BBox mmap_features_bbox( mmap.bbox.min - mmap.features_offset, mmap.bbox.max - mmap.features_offset);
-    // Point16 mmap_features_min( mmap.bbox.min - mmap.features_offset);
-    // Point16 mmap_features_max( mmap.bbox.max - mmap.features_offset);
     bufferedFile.readStringUntil('\n'); // blank line
     Polyline polyline;
     int line = 5;
