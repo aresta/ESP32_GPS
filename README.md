@@ -34,7 +34,7 @@ There is still work to do in several different areas.  Any help is welcome!
 - Test with IPS smaller displays and round (clock) displays.
 - A proper plastic housing.
 - Battery power. AAA or small Li-XX batteries.
-- Replace the ESP32 devkit by an ESP32 wroom or wrover
+- Replace the ESP32 devkit by an ESP32 wroom or wrover.
 - ...
 
 

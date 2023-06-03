@@ -16,6 +16,16 @@
             "width": 4
         },
         {
+            "features" : ["highway.secondary", "highway.secondary_link","highway.tertiary"],
+            "color": "yellow",
+            "width": 5
+        },
+        {
+            "features" : ["highway.motorway"],
+            "color": "orange",
+            "width": 7
+        },
+        {
             "features" : ["waterway.stream","waterway.river","waterway.drain"],
             "color": "cyan",
             "width": 1

@@ -6,7 +6,11 @@
                 "track" : ["tracktype"],
                 "residential" : ["width"],
                 "living_street" : [],
-                "pedestrian" : []
+                "pedestrian" : [],
+                "secondary" : [],
+                "secondary_link" : [],
+                "tertiary" : [],
+                "motorway" : []
             },
             "waterway": ["stream","drain","river","canal"]
         },
