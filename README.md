@@ -19,6 +19,7 @@ Here in the protoboard:
 And a more compact and robust prototype to test outside:
 
 ![GPS ESP32](/img/esp32_gps_b.jpg)
+![GPS ESP32](/img/esp32_gps_c.jpg)
 
 I'll post the wiring.
 

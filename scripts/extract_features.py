@@ -54,7 +54,7 @@ def process_features( features, conf ):
                 feature_type = conf['tags'] + '.' + tags[conf['tags']]
         coordinates = [[round(c[0],1),round(c[1],1)] for c in get_coordinates( feature['geometry'] )] # round to 1 decimal
 
-        if feature_type:
+        if feature_type and len(coordinates) > 0:
             extracted.append({
                 "type": feature_type,
                 "tags":  feature_type_tags,

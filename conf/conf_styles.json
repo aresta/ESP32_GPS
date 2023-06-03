@@ -18,12 +18,12 @@
         {
             "features" : ["highway.secondary", "highway.secondary_link","highway.tertiary"],
             "color": "yellow",
-            "width": 5
+            "width": 6
         },
         {
             "features" : ["highway.motorway"],
             "color": "orange",
-            "width": 7
+            "width": 12
         },
         {
             "features" : ["waterway.stream","waterway.river","waterway.drain"],
@@ -33,7 +33,7 @@
         {
             "features" : ["railway.rail"],
             "color": "black",
-            "width": 1
+            "width": 2
         }
     ],
     "polygons": [
@@ -46,8 +46,12 @@
             "color": "grayclear2"
         },
         {
-            "features" : ["natural","landuse.grass","leisure.park","leisure.garden","leisure.pitch"],
+            "features" : ["natural","landuse.grass","landuse.meadow","landuse.allotments","leisure.park","leisure.garden","leisure.pitch"],
             "color": "greenclear"
+        },
+        {
+            "features" : ["natural.water"],
+            "color": "blueclear"
         },
         {
             "features" : ["landuse.forest","natural.wood"],

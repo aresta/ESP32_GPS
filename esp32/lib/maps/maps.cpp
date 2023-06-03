@@ -56,7 +56,8 @@ std::vector<Point16> parse_coords( ReadBufferingStream& file){
     return points;
 }
 
-void get_map_features( MemMap& mmap)
+
+void get_map_lines( MemMap& mmap)
 {
     File file = SD.open( POLYLINES_FILE);
     ReadBufferingStream bufferedFile{ file, 1000};
@@ -88,7 +89,7 @@ void get_map_features( MemMap& mmap)
             polyline.width < 1 ||
             polyline.width > 10 ||
             num_coord <= 0 ){
-                log_e("ERROR reading map file in line %i width:%i", line);
+                log_e("ERROR reading map file in line %i", line);
         }
  
         std::vector<Point16> points = parse_coords( bufferedFile);
@@ -110,6 +111,61 @@ void get_map_features( MemMap& mmap)
     log_d("Done! Polylines: %i Points:%i Total memory:%i", mmap.polylines.size(), total_points, mmap.polylines.size()*12 + total_points*4);
 }
 
+void get_map_polygons( MemMap& mmap)
+{
+    File file = SD.open( POLYGONS_FILE);
+    ReadBufferingStream bufferedFile{ file, 1000};
+    String features = bufferedFile.readStringUntil('\n');
+    String offset_x = bufferedFile.readStringUntil('\n');
+    String offset_y = bufferedFile.readStringUntil('\n');
+    if( !offset_x.startsWith("offset_x:") || !offset_y.startsWith("offset_y:")) {
+        log_e("Wrong map file");
+    }
+    mmap.features_offset = Point32( 
+        offset_x.substring(10).toInt(), 
+        offset_y.substring(10).toInt());
+    log_d("features_offset: (%i,%i)", mmap.features_offset.x, mmap.features_offset.y);
+    BBox mmap_features_bbox( mmap.bbox.min - mmap.features_offset, mmap.bbox.max - mmap.features_offset);
+    bufferedFile.readStringUntil('\n'); // blank line
+    Polygon polygon;
+    int line = 5;
+    int total_points = 0;
+    while( bufferedFile.available()){
+        polygon.color = bufferedFile.readStringUntil('\n');
+        line++;
+        polygon.z_order = bufferedFile.readStringUntil('\n').toInt();
+        line++;
+        int num_coord = bufferedFile.readStringUntil('\n').toInt();
+        line++;
+        if( polygon.color.length() < 2 ||  // basic checks
+            num_coord <= 0 ){
+                log_e("ERROR reading map file in line %i", line);
+        }
+ 
+        std::vector<Point16> points = parse_coords( bufferedFile);
+        line++;
+        for( Point16 point : points){
+            if( mmap_features_bbox.contains_point( point)) { 
+                polygon.points = points;
+                mmap.polygons.push_back( polygon);
+                total_points += polygon.points.size();
+                log_v("Added polygon. Total: %i", mmap.polygons.size());
+                break;
+            }
+        }
+        polygon.points.clear();
+        // log_d("FreeHeap: %i %i", ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL));
+    }
+    mmap.polygons.shrink_to_fit();
+    file.close();
+    log_d("Done! polygons: %i Points:%i Total memory:%i", mmap.polygons.size(), total_points, mmap.polygons.size()*12 + total_points*4);
+}
+
+void get_map_features( MemMap& mmap)
+{
+    get_map_lines( mmap);
+    get_map_polygons( mmap);
+}
 
 void MemMap::setBounds( Point32 map_center, int32_t map_width, int32_t map_height)
 {
