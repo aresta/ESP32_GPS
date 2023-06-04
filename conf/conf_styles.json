@@ -26,7 +26,7 @@
             "width": 12
         },
         {
-            "features" : ["waterway.stream","waterway.river","waterway.drain"],
+            "features" : ["waterway.stream","waterway.river","waterway.drain","waterway"],
             "color": "cyan",
             "width": 1
         },
@@ -42,24 +42,24 @@
             "color": "grayclear"
         },
         {
-            "features" : ["amenity"],
-            "color": "grayclear2"
-        },
-        {
             "features" : ["natural","landuse.grass","landuse.meadow","landuse.allotments","leisure.park","leisure.garden","leisure.pitch"],
             "color": "greenclear"
         },
         {
-            "features" : ["natural.water"],
+            "features" : ["natural.water","leisure.swimming_pool","waterway"],
             "color": "blueclear"
         },
         {
             "features" : ["landuse.forest","natural.wood"],
-            "color": "greenclear2"
+            "color": "green"
         },
         {
             "features" : ["landuse.farmland"],
-            "color": "greenclear"
+            "color": "greenclear2"
+        },
+        {
+            "features" : ["amenity","leisure"],
+            "color": "grayclear2"
         }
     ]
 }

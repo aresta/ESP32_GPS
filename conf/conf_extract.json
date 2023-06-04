@@ -22,7 +22,7 @@
             "amenity": [],
             "leisure": [],
             "natural": [],
-            "landuse": []
+            "landuse": ["grass","meadow","allotments","brownfield","forest","wood","farmland"]
         }
     }
 }
