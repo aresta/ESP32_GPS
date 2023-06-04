@@ -3,7 +3,7 @@
 #include <math.h>
 #include <stdint.h>
 #include "gps.h"
-#include "features.h"
+#include "graphics.h"
 
 TinyGPSPlus gps;
 
@@ -31,19 +31,13 @@ Coord getPosition(HardwareSerial& serialGPS)
             // Serial.print("satellites ");  Serial.println(gps.satellites.value());
             coord.lat = gps.location.lat();
             coord.lng = gps.location.lng();
-            // coord.x = lon2x( coord.lng);
-            // coord.y = lat2y( coord.lat);
             coord.altitude = static_cast<int16_t>(gps.altitude.meters());
             coord.direction = static_cast<int16_t>(gps.course.deg()); // degrees
             coord.isValid = gps.location.isValid();
             coord.isUpdated = gps.location.isUpdated();
             coord.satellites = static_cast<int16_t>(gps.satellites.value());
-            // break;
         }
     }    
-    // Serial.print("location.isValid: "); Serial.println(gps.location.isValid());
-    // Serial.print("lat: "); Serial.println(coord.lat);
-    // Serial.print("lng: "); Serial.println(coord.lng);
     return coord;
 }
 

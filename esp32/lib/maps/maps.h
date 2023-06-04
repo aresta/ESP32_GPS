@@ -3,11 +3,10 @@
 #include <ArduinoJson.h>
 #include <stdint.h>
 #include <vector>
-#include "display.h"
 
 struct MemMap;
 struct Coord;
 
 bool init_sd_card();
-void get_map_features( MemMap& mmap);
+void import_map_features( MemMap& mmap);
 #endif

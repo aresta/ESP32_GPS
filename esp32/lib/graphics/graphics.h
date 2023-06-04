@@ -1,8 +1,30 @@
-#ifndef features_h_
-#define features_h_
+#ifndef graphics_h_
+#define graphics_h_
 #include <Arduino.h>
+#include <TFT_eSPI.h>
 #include <stdint.h>
 #include <vector>
+
+#define SCREEN_WIDTH 240        // tft.width()
+#define SCREEN_HEIGHT 320       // tft.height()
+#define SCREEN_BUFFER_SIZE 2    // buffer around the displayed area to keep feature in memory
+#define PIXEL_SIZE 3 // in meters
+
+const uint16_t WHITE        =   0xFFFF;
+const uint16_t BLACK        =   0x0000;
+const uint16_t RED          =   0xFA45;
+const uint16_t GREEN        =   0x76EE;
+const uint16_t GREENCLEAR   =   0x9F93;
+const uint16_t GREENCLEAR2  =   0xCF6E;
+const uint16_t BLUE         =   0x227E;
+const uint16_t BLUECLEAR    =   0x6D3E;
+const uint16_t CYAN         =   0xAA1F;
+const uint16_t YELLOW       =   0xFFF1;
+const uint16_t ORANGE       =   0xFCC2;
+const uint16_t GRAY         =   0x94B2;
+const uint16_t GRAYCLEAR    =   0xAD55;
+const uint16_t GRAYCLEAR2    =  0xD69A;
+const uint16_t BACKGROUND_COLOR = 0xEF5D;
 
 
 /// @brief Point in 32 bits projected coordinates (x,y) 
@@ -46,12 +68,6 @@ struct Coord {
 };
 
 
-// struct Line {
-//     Point16 p1;
-//     Point16 p2;
-// };
-
-
 struct Polyline {
     std::vector<Point16> points;
     String color;
@@ -81,6 +97,13 @@ struct BBox {
 };
 
 
+struct ViewPort {
+    void setCenter(Point32 pcenter);
+    Point32 center;
+    BBox bbox;
+};
+
+
 /// @brief Map Area with all features in memory
 struct MemMap {
 
@@ -94,5 +117,15 @@ struct MemMap {
     std::vector<Polygon> polygons;
     void setBounds( Point32 map_center, int32_t map_width, int32_t map_height);
 };
+
+
+/////////////////////  Functions  /////////////////////////
+
+uint32_t get_color( String color);
+void draw( TFT_eSPI& tft, ViewPort& display, MemMap& features);
+Point16 toScreenCoords( Point16 p, Point16 screen_center);
+void fill_polygon( TFT_eSPI& tft,  std::vector<Point16> points, int color);
+std::vector<Point16> clip_polygon( BBox bbox, std::vector<Point16>  points);
+void stats( ViewPort& viewPort, MemMap& mmap);
 
 #endif

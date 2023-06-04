@@ -2,8 +2,7 @@
 #include <TFT_eSPI.h> 
 #include "maps.h"
 #include "gps.h"
-#include "display.h"
-#include "features.h"
+#include "graphics.h"
 #include <TFTShape.h>
 
 TFT_eSPI tft = TFT_eSPI();
@@ -11,7 +10,7 @@ HardwareSerial SerialGPS(2);
 MemMap mmap;
 ViewPort viewPort;
 
-void display_pos( Coord& pos)
+void print_header( Coord& pos)
 {
     tft.fillRect(0, 0, 240, 25, TFT_YELLOW);
     tft.setCursor(5,5,2);
@@ -59,15 +58,16 @@ void setup()
     // tft.print(" "); tft.print(pos.lat, 4);
     // tft.print(" Sat: "); tft.print(pos.satellites);
 
-    // Point32 map_center( 225400.0, 5085200.0); // TODO: change to last position
-    Point32 map_center( 225713.76, 5085162.01); // TODO: change to last position
+    Point32 map_center( 225400.0, 5085200.0); // TODO: change to last position
+    // Point32 map_center( 225713.76, 5085162.01); // TODO: change to last position
     viewPort.setCenter( map_center);
     int32_t map_width = SCREEN_WIDTH * PIXEL_SIZE * SCREEN_BUFFER_SIZE;
     int32_t map_height = SCREEN_HEIGHT * PIXEL_SIZE * SCREEN_BUFFER_SIZE;
     mmap.setBounds( map_center, map_width, map_height);
     log_d("mmap.bbox.min.x=%i, mmap.bbox.min.y=%i", mmap.bbox.min.x, mmap.bbox.min.y);
-    get_map_features( mmap );
+    import_map_features( mmap );
     draw( tft, viewPort, mmap);
+    stats(viewPort, mmap);
 }
 
 double prev_lat=500, prev_lng=500;
@@ -82,6 +82,21 @@ void loop()
             prev_lat = pos.lat;
             prev_lng = pos.lng;
     }   
-    display_pos( pos);
-    delay(4000);
+    bool moved = false;
+    Point32 p = viewPort.center;
+    while( Serial.available()){
+        char key = Serial.read();
+        if( key == 0x1B || key == 0x5B) continue;  // skip ESC...
+        if( key == 0x44)     p.x -= 50; // left arrow key
+        else if(key == 0x43) p.x += 50; // rigth
+        else if(key == 0x41) p.y += 50; // up
+        else if(key == 0x42) p.y -= 50; // down
+        moved = true;
+    }
+    if( moved) {
+        viewPort.setCenter( p);
+        draw( tft, viewPort, mmap);
+    }
+    print_header( pos);
+    delay(2000);
 }
