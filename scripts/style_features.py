@@ -17,11 +17,15 @@ def process_features( features, styles ):
         feature_type_group = feature['type'].split('.')[0]
         feature_color = 'pink' # default
         feature_width = None   # default
+        found = False
         for style_item in styles:
             if feature_type in style_item['features'] or feature_type_group in style_item['features']:
                 if 'color' in style_item: feature_color = style_item['color']
                 if 'width' in style_item: feature_width = style_item['width']
-        # print(feature['type'], feature_color, feature_width)
+                found = True
+                break # keep first match
+        if not found: 
+            print("Not mapped: ", feature_type, feature_type_group)
         styled_features.append({
             "type": feature_type, # remove
             "color": feature_color, 
@@ -31,19 +35,23 @@ def process_features( features, styles ):
             })
     return styled_features
 
+print(" ---------  Lines  ---------")
 with open( LINES_INPUT_FILE, "r") as file:
     features = json.load(file)
 with open( LINES_OUPUT_FILE, "w") as file:
     json.dump( 
         process_features( features, styles["lines"] ), 
         file)
+print("Done!\n")
 
+print(" ---------  Polygons  ---------")
 with open( POLYGONS_INPUT_FILE, "r") as file:
     features = json.load(file)
 with open( POLYGONS_OUPUT_FILE, "w") as file:
     json.dump( 
         process_features( features, styles["polygons"] ), 
         file)
+print("Done!\n")
 
 
 

@@ -24,6 +24,7 @@ for feat in polygon_features:
         min_x = min( min_x, coord[0])
         min_y = min( min_y, coord[1])
 
+features, points = 0,0
 with open( LINES_MAP_FILE, "w", encoding='ascii') as file:
     file.write( f"features: {len(line_features)}\n")
     file.write( f"offset_x: {min_x}\n")
@@ -36,8 +37,12 @@ with open( LINES_MAP_FILE, "w", encoding='ascii') as file:
         file.write( f"{len(feat['coordinates'])}\n")
         for coord in feat['coordinates']:
             file.write( f"{round(coord[0] - min_x,1)},{round(coord[1] - min_y,1)};")
+            points += 1
         file.write('\n')
+        features += 1
+print("Lines, points: ", features, points)
 
+features, points = 0,0
 with open( POLYGONS_MAP_FILE, "w", encoding='ascii') as file:
     file.write( f"features: {len(line_features)}\n")
     file.write( f"offset_x: {min_x}\n")
@@ -49,7 +54,10 @@ with open( POLYGONS_MAP_FILE, "w", encoding='ascii') as file:
         file.write( f"{len(feat['coordinates'])}\n")
         for coord in feat['coordinates']:
             file.write( f"{round(coord[0] - min_x,1)},{round(coord[1] - min_y,1)};")
+            points += 1
         file.write('\n')
+        features += 1
+print("Polygons, points: ", features, points)
 
 
 

@@ -63,6 +63,16 @@ def process_features( features, conf ):
                 "coordinates": coordinates
                 })
             # print( feature_type, feature_type_tags)
+    
+    # print report
+    feat_found = set()
+    for ext in extracted:
+        feat_found.add( ext["type"])
+    print("Feature types extracted:")
+    for ft in sorted(feat_found):
+        print(ft)
+    print("------------------------")
+    
     return extracted
 
 
