@@ -11,17 +11,21 @@
 #     /maps/points.geojson /pbf/bcn.pbf \
 #     points
 
-ogr2ogr -t_srs EPSG:3857 -clipdst 219000 5080000 230000 5090000 -simplify 0.000005 \
+ogr2ogr -t_srs EPSG:3857 \
+    -clipdst 219000 5080000 230000 5090000 \
     /maps/lines.geojson /pbf/bcn.pbf \
     lines
+    # -simplify 0.000005 \
 
 # ogr2ogr -t_srs EPSG:3857 -clipdst 219000 5080000 230000 5090000 -simplify 0.000005 \
 #     /maps/relations.geojson /pbf/bcn.pbf \
 #     multilinestrings # relations...
 
-ogr2ogr -t_srs EPSG:3857 -clipdst 219000 5080000 230000 5090000 -simplify 0.000005 \
+ogr2ogr -t_srs EPSG:3857 \
+    -clipdst 219000 5080000 230000 5090000 \
     /maps/polygons.geojson /pbf/bcn.pbf \
     multipolygons
+    # -simplify 0.000005 \
 
 
 

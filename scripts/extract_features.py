@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 import json
+from shapely import Point, LineString, Polygon, MultiLineString, box
+from funcs import process_features, clip_features, draw_linestring, draw_polygon, SCREEN_HEIGHT, SCREEN_WIDTH, BACKGROUND_COLOR
+import PIL.ImageDraw as ImageDraw
+import PIL.Image as Image
 
 LINES_INPUT_FILE = '/maps/lines.geojson'
 LINES_OUPUT_FILE = '/maps/lines_extracted.geojson'
@@ -7,89 +11,35 @@ POLYGONS_INPUT_FILE = '/maps/polygons.geojson'
 POLYGONS_OUPUT_FILE = '/maps/polygons_extracted.geojson'
 CONF_FEATURES = '/conf/conf_extract.json'
 
-def parse_tags(tags_str):
-    res = dict()
-    tags = tags_str.split('","')
-    for tag in tags:
-        tag = tag.replace('"','')
-        parts = tag.split('=>')
-        res[parts[0]] = parts[1]
-    return res
+MAPBLOCK_SIZE_BITS = 12 
+MAPFILE_SIZE_BITS = 16 
 
-def get_coordinates( geom ):
-    geom_type = geom['type']
-    if geom_type == 'LineString':
-        return geom['coordinates']
-    elif geom_type in ('MultiLineString','Polygon'):
-        return [ coord for linestring in geom['coordinates'] for coord in linestring  ] # flatten the list of lists
-    elif geom_type == 'MultiPolygon': # TODO: flatten another level
-        return [] 
-    elif geom_type == 'GeometryCollection': # TODO
-        return []    
-    else: print("ERROR: unknow geometry type:", geom_type)
-    return None
+init_x, init_y = 226502.0, 5084319.0
 
-def process_features( features, conf ):
-    extracted = []
-    for feature in features:
-        properties = feature['properties']
-        tags = parse_tags( feature['properties']['other_tags'] ) if 'other_tags' in feature['properties'] else dict()
-        feature_type = None
-        feature_type_tags = []
-        z_order = properties['z_order'] if 'z_order' in properties else None
-        for conf_feat_type in conf['feature_types']:
-            if conf_feat_type in properties:
-                feat_subtype = properties[ conf_feat_type ]
-                filter_by_subtype = (len( conf['feature_types'][conf_feat_type]) > 0) 
-                if filter_by_subtype and not feat_subtype in conf['feature_types'][conf_feat_type]: continue
-                feature_type = conf_feat_type + '.' + feat_subtype
-                if isinstance( conf['feature_types'][conf_feat_type], list): break # no tags to check, we are done
-                conf_feature_tags = conf['feature_types'][conf_feat_type][feat_subtype]
-                for feat_subtype_tag in conf_feature_tags:
-                    if feat_subtype_tag in tags:
-                        feature_type_tags.append( feat_subtype_tag + '.' + tags[feat_subtype_tag])
-                break
-        if not feature_type:
-            if 'tags' in conf and conf['tags'] in tags:
-                feature_type = conf['tags'] + '.' + tags[conf['tags']]
-        coordinates = [[round(c[0],1),round(c[1],1)] for c in get_coordinates( feature['geometry'] )] # round to 1 decimal
+initial_point = Point( init_x, init_y)
 
-        if feature_type and len(coordinates) > 0:
-            extracted.append({
-                "type": feature_type,
-                "tags":  feature_type_tags,
-                "z_order": z_order,
-                "geom_type": feature['geometry']['type'],
-                "coordinates": coordinates
-                })
-            # print( feature_type, feature_type_tags)
-    
-    # print report
-    feat_found = set()
-    for ext in extracted:
-        feat_found.add( ext["type"])
-    print("Feature types extracted:")
-    for ft in sorted(feat_found):
-        print(ft)
-    print("------------------------")
-    
-    return extracted
+mapblock_mask = pow( 2, MAPBLOCK_SIZE_BITS) - 1     # ...0000111111111111
+mapfile_mask = pow( 2, MAPFILE_SIZE_BITS) - 1       # ...000011111111111111
+mapblock_offset = Point( round( init_x) & (~mapblock_mask), round( init_y) & (~mapblock_mask)) # clean the last 12 bits
+mapfile_offset = Point(  round( init_x) & (~mapfile_mask), round( init_y) & (~mapfile_mask))  # clean the last 16 bits
+
+mapblock_bbox = box( mapblock_offset.x, mapblock_offset.y, mapblock_offset.x + mapblock_mask, mapblock_offset.y + mapblock_mask)
+print("mapblock_bbox", mapblock_bbox)
+
+conf = json.load( open( CONF_FEATURES, "r"))
+lines = json.load( open( LINES_INPUT_FILE, "r"))
+polygons = json.load( open( POLYGONS_INPUT_FILE, "r"))
+extracted_polygons = process_features( polygons['features'], conf["polygons"])
+extracted_lines = process_features( lines['features'], conf["lines"])
+clipped = clip_features( extracted_polygons + extracted_lines, mapblock_bbox)
+
+image = Image.new("RGB", (SCREEN_WIDTH, SCREEN_HEIGHT), color=BACKGROUND_COLOR)
+draw = ImageDraw.Draw(image)
+for feat in clipped:
+    draw_linestring( draw, feat['coordinates'], initial_point )
 
 
-with open( CONF_FEATURES, "r") as file:
-    conf = json.load(file)
-
-with open( LINES_INPUT_FILE, "r") as file:
-    lines = json.load(file)
-extracted = process_features( lines['features'], conf["lines"])
-with open( LINES_OUPUT_FILE, "w") as file:
-    json.dump( extracted, file)
-
-with open( POLYGONS_INPUT_FILE, "r") as file:
-    polygons = json.load(file)
-extracted = process_features( polygons['features'], conf["polygons"])    
-with open( POLYGONS_OUPUT_FILE, "w") as file:
-    json.dump( extracted, file)
+image.save("test.png")
 
 
 
