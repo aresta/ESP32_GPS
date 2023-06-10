@@ -19,12 +19,23 @@ void print_header( Coord& pos)
     tft.print(" Sats: "); tft.print(pos.satellites);
 }
 
+void printFreeMem()
+{
+    log_i("FreeHeap: %i", esp_get_free_heap_size());
+    log_i("Heap minimum_free_heap_size: %i", esp_get_minimum_free_heap_size());
+    log_i("Heap largest_free_block: %i", heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+    log_i("Task watermark: %i", uxTaskGetStackHighWaterMark(NULL));
+}
+
 void setup()
 {
     Serial.begin(115200);
+    printFreeMem();
+#ifdef ARDUINO_uPesy_WROVER
+    SerialGPS.begin(9600, SERIAL_8N1, 26, 27);  // rx=gpio26, tx=gpio27 (Wrover...)
+#else   // any board with rx=gpio16, tx=gpio17
     SerialGPS.begin(9600, SERIAL_8N1, 16, 17);
-    Serial.println("Olakease!!!");
-
+#endif
     digitalWrite(15, HIGH); // TFT screen chip select
     digitalWrite(13, HIGH); // SD card chips select
     
@@ -39,25 +50,6 @@ void setup()
     tft.setTextColor(TFT_BLACK);
     tft.print("Reading map...");
 
-    // tft.setCursor(20,20,4);
-    // tft.setTextColor(TFT_BLACK);
-    // tft.println ("Olakease!");
-    // tft.fillRect(0, 0, 20, 20, 0xf800);
-    // tft.fillRect(20, 0, 20, 20, 0x07E0);
-    // tft.fillRect(40, 0, 20, 20, 0x001F);
-    // tft.drawWideLine(0,0,100,100,10,0xf800);
-    // tft.drawWideLine(0,0,100,100,5,0xFFFF);
-    // tft.drawWideLine(50,0,150,100,10,0xFFFF,0xf800);
-    // tft.drawLine(180, 50, 220, 100, TFT_GREEN);
-    // tft.invertDisplay(true);  // TODO: check
-    // tft.setRotation(2);  // portrait
-    // tft.fillScreen( BACKGROUND_COLOR);
-    // tft.fillRect(0, 0, 240, 25, TFT_YELLOW);
-    // tft.setCursor(0,0,2);
-    // tft.print(pos.lng, 4);
-    // tft.print(" "); tft.print(pos.lat, 4);
-    // tft.print(" Sat: "); tft.print(pos.satellites);
-
     // Point32 map_center( 225400.0, 5085200.0); // TODO: change to last position
     Point32 map_center( 226540.24, 5083191.36); // TODO: change to last position
     viewPort.setCenter( map_center);
@@ -68,6 +60,7 @@ void setup()
     import_map_features( mmap );
     draw( tft, viewPort, mmap);
     stats(viewPort, mmap);
+    printFreeMem();
 }
 
 double prev_lat=500, prev_lng=500;
