@@ -58,8 +58,8 @@ void setup()
     // tft.print(" "); tft.print(pos.lat, 4);
     // tft.print(" Sat: "); tft.print(pos.satellites);
 
-    Point32 map_center( 225400.0, 5085200.0); // TODO: change to last position
-    // Point32 map_center( 225713.76, 5085162.01); // TODO: change to last position
+    // Point32 map_center( 225400.0, 5085200.0); // TODO: change to last position
+    Point32 map_center( 226540.24, 5083191.36); // TODO: change to last position
     viewPort.setCenter( map_center);
     int32_t map_width = SCREEN_WIDTH * PIXEL_SIZE * SCREEN_BUFFER_SIZE;
     int32_t map_height = SCREEN_HEIGHT * PIXEL_SIZE * SCREEN_BUFFER_SIZE;

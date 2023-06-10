@@ -7,8 +7,8 @@
 
 #define SCREEN_WIDTH 240        // tft.width()
 #define SCREEN_HEIGHT 320       // tft.height()
-#define SCREEN_BUFFER_SIZE 2    // buffer around the displayed area to keep feature in memory
-#define PIXEL_SIZE 3 // in meters
+#define SCREEN_BUFFER_SIZE 4    // buffer around the displayed area to keep feature in memory
+#define PIXEL_SIZE 2 // in meters
 
 const uint16_t WHITE        =   0xFFFF;
 const uint16_t BLACK        =   0x0000;
@@ -23,7 +23,8 @@ const uint16_t YELLOW       =   0xFFF1;
 const uint16_t ORANGE       =   0xFCC2;
 const uint16_t GRAY         =   0x94B2;
 const uint16_t GRAYCLEAR    =   0xAD55;
-const uint16_t GRAYCLEAR2    =  0xD69A;
+const uint16_t GRAYCLEAR2   =   0xD69A;
+const uint16_t BROWN        =   0xAB00;
 const uint16_t BACKGROUND_COLOR = 0xEF5D;
 
 

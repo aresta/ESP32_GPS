@@ -21,6 +21,7 @@ uint32_t get_color( String color)
             color == "cyan"         ? CYAN : 
             color == "orange"       ? ORANGE : 
             color == "yellow"       ? YELLOW: 
+            color == "brown"        ? BROWN: 
             color == "pink"         ? TFT_PINK: 
             TFT_YELLOW;
 }

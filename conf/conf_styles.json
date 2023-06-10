@@ -1,9 +1,14 @@
 {
     "lines": [
         {
-            "features" : ["highway.path"],
+            "features" : ["highway.path","highway.footway"],
             "color": "red",
             "width": 1
+        },
+        {
+            "features" : ["highway.steps"],
+            "color": "brown",
+            "width": 2
         },
         {
             "features" : ["highway.track"],
@@ -11,7 +16,7 @@
             "width": 3
         },
         {
-            "features" : ["highway.residential", "highway.living_street", "highway.pedestrian"],
+            "features" : ["highway.residential", "highway.service","highway.living_street", "highway.pedestrian"],
             "color": "white",
             "width": 4
         },
