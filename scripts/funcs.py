@@ -5,7 +5,7 @@ import PIL.Image as Image
 # SCREEN_WIDTH, SCREEN_HEIGHT = 480, 640
 SCREEN_WIDTH, SCREEN_HEIGHT = 4000, 6000
 PIXEL_SIZE = 2 # in meters
-BACKGROUND_COLOR = (220,220,220)
+BACKGROUND_COLOR = 0xDDDDDD
 
 
 def parse_tags(tags_str):
@@ -70,7 +70,6 @@ def process_features( features, conf ):
                 "geom_type": feature['geometry']['type'],
                 "tags":  feature_type_tags,
                 "z_order": z_order,
-                "geom_type": feature['geometry']['type'],
                 "coordinates": coordinates
                 })
             # print( feature_type, feature_type_tags)
@@ -104,34 +103,68 @@ def clip_features( features, bbox: Polygon):
             if feat_type != type(new_feat['coordinates']):
                 if len( new_feat['coordinates'].coords) <= 2: continue
                 # if feat_type == LinearRing: new_feat['coordinates'] = LinearRing( new_feat['coordinates'].coords)
+                # TODO: fix split of polygons in the border of the blocks
             clipped.append( new_feat)
     return clipped
+   
 
-def draw_linestring( draw: ImageDraw, coordinates: LineString, screen_center: Point ):
+def style_features( features, styles):
+    styled_features = []
+    for feat in features:
+        feature_type = feat['type']
+        feature_type_group = feat['type'].split('.')[0]
+        feature_color = 'pink' # default
+        feature_width = None   # default
+        found = False
+        conf_styles = styles['lines'] if feat['geom_type'] in ('LineString','MultiLineString') else styles['polygons']
+        for style_item in conf_styles:
+            if feature_type in style_item['features'] or feature_type_group in style_item['features']:
+                if 'color' in style_item: feature_color = style_item['color']
+                if 'width' in style_item: feature_width = style_item['width']
+                found = True
+                break # keep first match
+        if not found: 
+            print("Not mapped: ", feature_type, feature_type_group)
+        styled_features.append({
+            "type": feature_type, # remove
+            "geom_type": feat['geom_type'],
+            "color": feature_color, 
+            "width": feature_width,
+            "z_order": feat['z_order'],
+            "coordinates": feat['coordinates'],
+            })
+    return styled_features
+
+
+def draw_feature( draw: ImageDraw, coordinates: LineString, color, width, screen_center: Point ):
     min_x = screen_center.x - PIXEL_SIZE*SCREEN_WIDTH/2
     min_y = screen_center.y - PIXEL_SIZE*SCREEN_HEIGHT/2
     points = [ ( (x-min_x)/PIXEL_SIZE, SCREEN_HEIGHT-(y-min_y)/PIXEL_SIZE ) for x,y in coordinates.coords]
-    if type( coordinates) == LinearRing:
-        draw.polygon( points, fill=0xDDFFDD)
-        draw.line( points, fill=0x55BB55)
-        for p in points: draw.point( p, "red")
-    else:
-        draw.line( points, fill="blue", width=1)
-        draw.point( points[0], "red")
-        draw.point( points[-1], "red")
-    
 
-def draw_polygon( coordinates, color ):
-    global total_points
-    if not color: color = BACKGROUND_COLOR
-    if ',' in color: # tuple with color components
-        color = tuple(map(int, color.split(',')))
-    for coord in coordinates:
-        # print(coord)
-        if isinstance(coord[0], list): continue # TODO
-        point = ( float(coord[0]), float(coord[1]) )
-        if point[0] > min_x and point[0] < max_x and point[1] > min_y and point[1] < max_y:
-            points = [ ( (x-min_x)/PIXEL_SIZE, SCREEN_HEIGHT-(y-min_y)/PIXEL_SIZE ) for x,y in coordinates]
-            draw.polygon( points, fill=color)
-            total_points += len( coordinates)
-            continue
+    if   color == 'green':       color = 0xAADDAA
+    elif color == 'greenclear':  color = 0xBAEEBA
+    elif color == 'greenclear2': color = 0xBCFFBC
+    elif color == 'grayclear':   color = 0xBFBFBF
+    elif color == 'grayclear2':  color = 0xCFCFCF
+    elif color == 'blueclear':   color = 0xBBBBFF
+    
+    if type( coordinates) == LinearRing:
+        draw.polygon( points, fill = color)
+        # draw.line( points, fill=0x55BB55)
+        # for p in points: draw.point( p, "red")
+    else:
+        if not width: width = 1
+        else:
+            width =  round(width/PIXEL_SIZE)
+            if width == 0: width = 1
+        draw.line( points, fill = color, width = width)
+        # draw.point( points[0], "red")
+        # draw.point( points[-1], "red")
+
+
+def render_map( features, screen_center: Point):
+    image = Image.new("RGB", (SCREEN_WIDTH, SCREEN_HEIGHT), color=BACKGROUND_COLOR)
+    draw = ImageDraw.Draw(image)
+    for feat in features:
+        draw_feature( draw, feat['coordinates'], feat['color'], feat['width'], screen_center)
+    image.save("test.png")

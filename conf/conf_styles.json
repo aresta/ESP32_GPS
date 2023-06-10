@@ -47,7 +47,8 @@
             "color": "grayclear"
         },
         {
-            "features" : ["natural","landuse.grass","landuse.meadow","landuse.allotments","leisure.park","leisure.garden","leisure.pitch"],
+            "features" : ["natural","landuse.grass","landuse.meadow","landuse.allotments","leisure.park","leisure.garden",
+                "leisure.pitch","leisure.golf_course"],
             "color": "greenclear"
         },
         {
