@@ -4,7 +4,7 @@
 #include "graphics.h"
 
 
-uint32_t get_color( String color)
+uint16_t get_color( String color)
 {
     return  
             color == "white"        ? WHITE :  // TODO: rework
