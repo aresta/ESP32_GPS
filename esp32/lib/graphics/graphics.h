@@ -7,7 +7,7 @@
 
 #define SCREEN_WIDTH 240        // tft.width()
 #define SCREEN_HEIGHT 320       // tft.height()
-#define SCREEN_BUFFER_SIZE 4    // buffer around the displayed area to keep feature in memory
+#define SCREEN_BUFFER_SIZE 10    // buffer around the displayed area to keep feature in memory
 #define PIXEL_SIZE 2 // in meters
 
 const uint16_t WHITE        =   0xFFFF;
@@ -71,16 +71,16 @@ struct Coord {
 
 struct Polyline {
     std::vector<Point16> points;
-    String color;
-    int16_t width;
-    int16_t z_order;
+    uint16_t color;
+    uint8_t width;
+    int8_t z_order;
 };
 
 
 struct Polygon {
     std::vector<Point16> points;
-    String color;
-    int16_t z_order;
+    uint16_t color;
+    int8_t z_order;
 };
 
 
@@ -122,7 +122,7 @@ struct MemMap {
 
 /////////////////////  Functions  /////////////////////////
 
-uint32_t get_color( String color);
+uint16_t get_color( String color);
 void draw( TFT_eSPI& tft, ViewPort& display, MemMap& features);
 Point16 toScreenCoords( Point16 p, Point16 screen_center);
 void fill_polygon( TFT_eSPI& tft,  std::vector<Point16> points, int color);

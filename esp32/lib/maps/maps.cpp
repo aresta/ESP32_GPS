@@ -75,7 +75,7 @@ void import_lines( MemMap& mmap)
     int line = 5;
     int total_points = 0;
     while( bufferedFile.available()){
-        polyline.color = bufferedFile.readStringUntil('\n');
+        polyline.color = get_color( bufferedFile.readStringUntil('\n'));
         line++;
         polyline.width = bufferedFile.readStringUntil('\n').toInt() ?: 1;
         line++;
@@ -83,9 +83,10 @@ void import_lines( MemMap& mmap)
         line++;
         const int num_coord = bufferedFile.readStringUntil('\n').toInt();
         line++;
-        if( polyline.color.length() < 2 ||  // basic checks
-            polyline.width < 1 ||
+        if( polyline.width < 1 ||  // basic checks
             polyline.width > 50 ||
+            polyline.z_order > 125 ||
+            polyline.z_order < -125 ||
             num_coord <= 0 ){
                 log_e("ERROR reading map file in line %i", line);
         }
@@ -104,7 +105,7 @@ void import_lines( MemMap& mmap)
     }
     mmap.polylines.shrink_to_fit();
     file.close();
-    log_d("Done! Polylines: %i Points:%i Total memory:%i", mmap.polylines.size(), total_points, mmap.polylines.size()*12 + total_points*4);
+    log_d("Done! Polylines: %i Points:%i Total memory:%i", mmap.polylines.size(), total_points, mmap.polylines.size()*20 + total_points*4);
 }
 
 void import_polygons( MemMap& mmap)
@@ -127,14 +128,15 @@ void import_polygons( MemMap& mmap)
     int line = 5;
     int total_points = 0;
     while( bufferedFile.available()){
-        polygon.color = bufferedFile.readStringUntil('\n');
+        polygon.color = get_color( bufferedFile.readStringUntil('\n'));
         line++;
         polygon.z_order = bufferedFile.readStringUntil('\n').toInt();
         line++;
         const int num_coord = bufferedFile.readStringUntil('\n').toInt();
         line++;
-        if( polygon.color.length() < 2 ||  // basic checks
-            num_coord <= 0 ){
+        if( num_coord <= 0 ||
+            polygon.z_order > 125 ||
+            polygon.z_order < -125  ){   // basic checks
                 log_e("ERROR reading map file in line %i", line);
         }
 
@@ -146,16 +148,14 @@ void import_polygons( MemMap& mmap)
             if( mmap_features_bbox.contains_point( point)) { 
                 mmap.polygons.push_back( polygon);
                 total_points += polygon.points.size();
-                // log_d("Added polygon %i line:%i", mmap.polygons.size(), line);
-                // log_d("FreeHeap: %i %i", ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL));
                 break;
             }
         }
-        // log_d("FreeHeap: %i %i", ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL));
+        // log_d("FreeHeap: %i %i", esp_get_free_heap_size(), esp_get_minimum_free_heap_size());
     }
     mmap.polygons.shrink_to_fit();
     file.close();
-    log_d("Done! polygons: %i Points:%i Total memory:%i", mmap.polygons.size(), total_points, mmap.polygons.size()*12 + total_points*4);
+    log_d("Done! polygons: %i Points:%i Total memory:%i", mmap.polygons.size(), total_points, mmap.polygons.size()*20 + total_points*4);
 }
 
 void import_map_features( MemMap& mmap)
