@@ -59,7 +59,6 @@ void import_lines( MemMap& mmap)
 {
     File file = SD.open( POLYLINES_FILE);
     ReadBufferingStream bufferedFile{ file, 500};
-    String features = bufferedFile.readStringUntil('\n');
     String offset_x = bufferedFile.readStringUntil('\n');
     String offset_y = bufferedFile.readStringUntil('\n');
     if( !offset_x.startsWith("offset_x:") || !offset_y.startsWith("offset_y:")) {
@@ -112,7 +111,6 @@ void import_polygons( MemMap& mmap)
 {
     File file = SD.open( POLYGONS_FILE);
     ReadBufferingStream bufferedFile{ file, 500};
-    String features = bufferedFile.readStringUntil('\n');
     String offset_x = bufferedFile.readStringUntil('\n');
     String offset_y = bufferedFile.readStringUntil('\n');
     if( !offset_x.startsWith("offset_x:") || !offset_y.startsWith("offset_y:")) {

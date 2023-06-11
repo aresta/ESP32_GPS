@@ -17,8 +17,6 @@ def parse_tags(tags_str):
         res[parts[0]] = parts[1]
     return res
 
-def round_coord( coord):
-    return ( round( coord[0]), round( coord[1]))
 
 def get_coordinates( geom ):
     geom_type = geom['type']
@@ -162,9 +160,9 @@ def draw_feature( draw: ImageDraw, coordinates: LineString, color, width, screen
         # draw.point( points[-1], "red")
 
 
-def render_map( features, screen_center: Point):
+def render_map( features, file_name, screen_center: Point):
     image = Image.new("RGB", (SCREEN_WIDTH, SCREEN_HEIGHT), color=BACKGROUND_COLOR)
     draw = ImageDraw.Draw(image)
     for feat in features:
         draw_feature( draw, feat['coordinates'], feat['color'], feat['width'], screen_center)
-    image.save("test.png")
+    image.save( file_name)
