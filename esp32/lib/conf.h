@@ -3,8 +3,8 @@
 
 #define CORE_DEBUG_LEVEL 5 
 
-const char* POLYLINES_FILE = "/maps/lines.map";
-// const char* POLYLINES_FILE2 = "/maps/lines2.map";
-const char* POLYGONS_FILE = "/maps/polygons.map";
+#define SCREEN_WIDTH 240        // tft.width()
+#define SCREEN_HEIGHT 320       // tft.height()
+#define PIXEL_SIZE 2 // in meters
 
 #endif

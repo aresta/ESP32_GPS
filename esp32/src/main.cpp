@@ -7,7 +7,7 @@
 
 TFT_eSPI tft = TFT_eSPI();
 HardwareSerial SerialGPS(2);
-MemMap mmap;
+MemBlocks memBlocks;
 ViewPort viewPort;
 
 void print_header( Coord& pos)
@@ -32,9 +32,9 @@ void setup()
     Serial.begin(115200);
     printFreeMem();
 #ifdef ARDUINO_uPesy_WROVER
-    SerialGPS.begin(9600, SERIAL_8N1, 26, 27);  // rx=gpio26, tx=gpio27 (Wrover...)
-#else   // any board with rx=gpio16, tx=gpio17
-    SerialGPS.begin(9600, SERIAL_8N1, 16, 17);
+    SerialGPS.begin(9600, SERIAL_8N1, 26, 27);  // rx=gpio26, tx=gpio27 (Wrover)
+#else   
+    SerialGPS.begin(9600, SERIAL_8N1, 16, 17);  // other boards with rx=gpio16, tx=gpio17
 #endif
     digitalWrite(15, HIGH); // TFT screen chip select
     digitalWrite(13, HIGH); // SD card chips select
@@ -51,15 +51,12 @@ void setup()
     tft.print("Reading map...");
 
     // Point32 map_center( 225400.0, 5085200.0); // TODO: change to last position
-    Point32 map_center( 226540.24, 5083191.36); // TODO: change to last position
+    Point32 map_center( 226023.09, 5085200.0); // TODO: change to last position
     viewPort.setCenter( map_center);
-    int32_t map_width = SCREEN_WIDTH * PIXEL_SIZE * SCREEN_BUFFER_SIZE;
-    int32_t map_height = SCREEN_HEIGHT * PIXEL_SIZE * SCREEN_BUFFER_SIZE;
-    mmap.setBounds( map_center, map_width, map_height);
-    log_d("mmap.bbox.min.x=%i, mmap.bbox.min.y=%i", mmap.bbox.min.x, mmap.bbox.min.y);
-    import_map_features( mmap );
-    draw( tft, viewPort, mmap);
-    stats(viewPort, mmap);
+    get_map_blocks( memBlocks, viewPort.bbox );
+
+    draw( tft, viewPort, memBlocks);
+    // stats(viewPort, mmap);
     printFreeMem();
 }
 
@@ -70,8 +67,10 @@ void loop()
     if( pos.isValid && 
         abs(pos.lat-prev_lat) > 0.00005 &&
         abs(pos.lng-prev_lng) > 0.00005 ){
-            viewPort.setCenter( pos.getPoint32());
-            draw( tft, viewPort, mmap);
+            Point32 map_center = pos.getPoint32();
+            viewPort.setCenter( map_center);
+            get_map_blocks( memBlocks, viewPort.bbox);
+            draw( tft, viewPort, memBlocks);
             prev_lat = pos.lat;
             prev_lng = pos.lng;
     }   
@@ -88,8 +87,9 @@ void loop()
     }
     if( moved) {
         viewPort.setCenter( p);
-        draw( tft, viewPort, mmap);
+        get_map_blocks( memBlocks, viewPort.bbox);
+        draw( tft, viewPort, memBlocks);
     }
     print_header( pos);
-    delay(2000);
+    delay(500);
 }

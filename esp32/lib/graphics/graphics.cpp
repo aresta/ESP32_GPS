@@ -2,29 +2,7 @@
 #include <TFT_eSPI.h>
 #include <stdint.h>
 #include "graphics.h"
-
-
-uint16_t get_color( String color)
-{
-    return  
-            color == "white"        ? WHITE :  // TODO: rework
-            color == "black"        ? BLACK : 
-            color == "gray"         ? GRAY : 
-            color == "grayclear"    ? GRAYCLEAR : 
-            color == "grayclear2"   ? GRAYCLEAR2 : 
-            color == "red"          ? RED : 
-            color == "green"        ? GREEN : 
-            color == "greenclear"   ? GREENCLEAR : 
-            color == "greenclear2"  ? GREENCLEAR2 : 
-            color == "blue"         ? BLUE : 
-            color == "blueclear"    ? BLUECLEAR : 
-            color == "cyan"         ? CYAN : 
-            color == "orange"       ? ORANGE : 
-            color == "yellow"       ? YELLOW: 
-            color == "brown"        ? BROWN: 
-            color == "pink"         ? TFT_PINK: 
-            TFT_YELLOW;
-}
+#include "../conf.h"
 
 
 void ViewPort::setCenter(Point32 pcenter) {
@@ -121,4 +99,11 @@ std::vector<Point16> clip_polygon( BBox bbox, std::vector<Point16> points)
 
     }
     return clipped;
+}
+
+Point32::Point32( char *coords_pair)
+{
+    char *next;
+    x = round( strtod( coords_pair, &next));  // 1st coord
+    y = round( strtod( ++next, NULL));  // 2nd coord
 }

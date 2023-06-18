@@ -5,11 +5,6 @@
 #include <stdint.h>
 #include <vector>
 
-#define SCREEN_WIDTH 240        // tft.width()
-#define SCREEN_HEIGHT 320       // tft.height()
-#define SCREEN_BUFFER_SIZE 10    // buffer around the displayed area to keep feature in memory
-#define PIXEL_SIZE 2 // in meters
-
 const uint16_t WHITE        =   0xFFFF;
 const uint16_t BLACK        =   0x0000;
 const uint16_t RED          =   0xFA45;
@@ -26,7 +21,6 @@ const uint16_t GRAYCLEAR    =   0xAD55;
 const uint16_t GRAYCLEAR2   =   0xD69A;
 const uint16_t BROWN        =   0xAB00;
 const uint16_t BACKGROUND_COLOR = 0xEF5D;
-
 
 /// @brief Point in 32 bits projected coordinates (x,y) 
 struct Point32 {
@@ -73,14 +67,12 @@ struct Polyline {
     std::vector<Point16> points;
     uint16_t color;
     uint8_t width;
-    int8_t z_order;
 };
 
 
 struct Polygon {
     std::vector<Point16> points;
     uint16_t color;
-    int8_t z_order;
 };
 
 
@@ -105,28 +97,15 @@ struct ViewPort {
 };
 
 
-/// @brief Map Area with all features in memory
-struct MemMap {
-
-    /// @brief Map area in real world coordinates.
-    BBox bbox;
-
-    /// @brief Features come with coordinates relative to this point, to have smaller values and fit in 16 bits.
-    Point32 features_offset;
-    
-    std::vector<Polyline> polylines;
-    std::vector<Polygon> polygons;
-    void setBounds( Point32 map_center, int32_t map_width, int32_t map_height);
-};
-
 
 /////////////////////  Functions  /////////////////////////
 
-uint16_t get_color( String color);
-void draw( TFT_eSPI& tft, ViewPort& display, MemMap& features);
+struct MapBlock;
+struct MemBlocks;
+void draw( TFT_eSPI& tft, ViewPort& viewPort, MemBlocks& memblocks);
 Point16 toScreenCoords( Point16 p, Point16 screen_center);
 void fill_polygon( TFT_eSPI& tft,  std::vector<Point16> points, int color);
 std::vector<Point16> clip_polygon( BBox bbox, std::vector<Point16>  points);
-void stats( ViewPort& viewPort, MemMap& mmap);
+void stats( ViewPort& viewPort, MapBlock* mblock);
 
 #endif

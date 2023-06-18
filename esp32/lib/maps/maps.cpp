@@ -1,11 +1,12 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <SD.h>
-#include <ArduinoJson.h>
 #include <StreamUtils.h>
-#include "../conf.h"
+#include <string>
 #include "graphics.h"
 #include "maps.h"
+
+const String base_folder = "/maps/"; // TODO: folder selection
 
 bool init_sd_card()
 {
@@ -55,126 +56,96 @@ void parse_coords( ReadBufferingStream& file, std::vector<Point16>& points){
 }
 
 
-void import_lines( MemMap& mmap)
+MapBlock* read_map_block( String file_name)
 {
-    File file = SD.open( POLYLINES_FILE);
-    ReadBufferingStream bufferedFile{ file, 500};
-    String offset_x = bufferedFile.readStringUntil('\n');
-    String offset_y = bufferedFile.readStringUntil('\n');
-    if( !offset_x.startsWith("offset_x:") || !offset_y.startsWith("offset_y:")) {
-        log_e("Wrong map file");
-    }
-    mmap.features_offset = Point32( 
-        offset_x.substring(10).toInt(), 
-        offset_y.substring(10).toInt());
-    log_d("features_offset: (%i,%i)", mmap.features_offset.x, mmap.features_offset.y);
-    BBox mmap_features_bbox( mmap.bbox.min - mmap.features_offset, mmap.bbox.max - mmap.features_offset);
-    bufferedFile.readStringUntil('\n'); // blank line
-    Polyline polyline;
+    MapBlock* mblock = new MapBlock();
+    File file = SD.open( file_name + ".fmp");
+    assert( file);
+    ReadBufferingStream bufferedFile{ file, 1000};
+
+    // read polygons
+    String feature_type = bufferedFile.readStringUntil(':');
+    if( feature_type != "Polygons") log_e("Map error. Expected Polygons instead of: %s", feature_type);
+    u_int32_t count = bufferedFile.readStringUntil('\n').toInt();
+    assert( count > 0);
     int line = 5;
     int total_points = 0;
-    while( bufferedFile.available()){
-        polyline.color = get_color( bufferedFile.readStringUntil('\n'));
+    Polygon polygon;
+    while( count > 0 && bufferedFile.available()){
+        polygon.color = std::stoul( bufferedFile.readStringUntil('\n').c_str(), nullptr, 16);
+        line++;
+        polygon.points.clear();
+        parse_coords( bufferedFile, polygon.points);
+        line++;
+        mblock->polygons.push_back( polygon);
+        total_points += polygon.points.size();
+        count--;
+    }
+    assert( count == 0);
+    mblock->polygons.shrink_to_fit();
+
+    // read lines
+    feature_type = bufferedFile.readStringUntil(':');
+    if( feature_type != "Polylines") log_e("Map error. Expected Polylines instead of: %s", feature_type);
+    count = bufferedFile.readStringUntil('\n').toInt();
+    assert( count > 0);
+    Polyline polyline;
+    while( count > 0 && bufferedFile.available()){
+        polyline.color = std::stoul( bufferedFile.readStringUntil('\n').c_str(), nullptr, 16);
         line++;
         polyline.width = bufferedFile.readStringUntil('\n').toInt() ?: 1;
         line++;
-        polyline.z_order = bufferedFile.readStringUntil('\n').toInt();
-        line++;
-        const int num_coord = bufferedFile.readStringUntil('\n').toInt();
-        line++;
-        if( polyline.width < 1 ||  // basic checks
-            polyline.width > 50 ||
-            polyline.z_order > 125 ||
-            polyline.z_order < -125 ||
-            num_coord <= 0 ){
-                log_e("ERROR reading map file in line %i", line);
-        }
         polyline.points.clear();
         parse_coords( bufferedFile, polyline.points);
         line++;
-        for( Point16 point : polyline.points){
-            if( mmap_features_bbox.contains_point( point)) { 
-                mmap.polylines.push_back( polyline);
-                total_points += polyline.points.size();
-                log_v("Added polyline. Total: %i", mmap.polylines.size());
-                break;
-            }
-        }
-        // log_d("FreeHeap: %i %i", ESP.getFreeHeap(), uxTaskGetStackHighWaterMark(NULL));
+        mblock->polylines.push_back( polyline);
+        total_points += polyline.points.size();
+        count--;
     }
-    mmap.polylines.shrink_to_fit();
+    assert( count == 0);
+    mblock->polylines.shrink_to_fit();
     file.close();
-    log_d("Done! Polylines: %i Points:%i Total memory:%i", mmap.polylines.size(), total_points, mmap.polylines.size()*20 + total_points*4);
+    return mblock;
 }
 
-void import_polygons( MemMap& mmap)
-{
-    File file = SD.open( POLYGONS_FILE);
-    ReadBufferingStream bufferedFile{ file, 500};
-    String offset_x = bufferedFile.readStringUntil('\n');
-    String offset_y = bufferedFile.readStringUntil('\n');
-    if( !offset_x.startsWith("offset_x:") || !offset_y.startsWith("offset_y:")) {
-        log_e("Wrong map file");
-    }
-    mmap.features_offset = Point32( 
-        offset_x.substring(10).toInt(), 
-        offset_y.substring(10).toInt());
-    log_d("features_offset: (%i,%i)", mmap.features_offset.x, mmap.features_offset.y);
-    BBox mmap_features_bbox = mmap.bbox - mmap.features_offset;
-    bufferedFile.readStringUntil('\n'); // blank line
-    Polygon polygon;
-    int line = 5;
-    int total_points = 0;
-    while( bufferedFile.available()){
-        polygon.color = get_color( bufferedFile.readStringUntil('\n'));
-        line++;
-        polygon.z_order = bufferedFile.readStringUntil('\n').toInt();
-        line++;
-        const int num_coord = bufferedFile.readStringUntil('\n').toInt();
-        line++;
-        if( num_coord <= 0 ||
-            polygon.z_order > 125 ||
-            polygon.z_order < -125  ){   // basic checks
-                log_e("ERROR reading map file in line %i", line);
-        }
 
-        polygon.points.clear();
-        parse_coords( bufferedFile, polygon.points);
-        // clip_polygon( mmap_features_bbox, polygon.points);
-        line++;
-        for( Point16 point : polygon.points){
-            if( mmap_features_bbox.contains_point( point)) { 
-                mmap.polygons.push_back( polygon);
-                total_points += polygon.points.size();
-                break;
+void get_map_blocks( MemBlocks& memBlocks, BBox& bbox)
+{
+    for( MapBlock* block: memBlocks.blocks){
+        // log_d("Block: %p", block);
+        if( block) block->inView = false;
+    }
+    for( Point32 point: { bbox.min, bbox.max, Point32( bbox.min.x, bbox.max.y), Point32( bbox.max.x, bbox.min.y) }){
+        int32_t min_x = point.x & ( ~mapblock_mask);
+        int32_t min_y = point.y & ( ~mapblock_mask);
+        int32_t block_x = (min_x >> MAPBLOCK_SIZE_BITS) & mapfolder_mask;
+        int32_t block_y = (min_y >> MAPBLOCK_SIZE_BITS) & mapfolder_mask;
+        int32_t folder_name_x = min_x >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
+        int32_t folder_name_y = min_y >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
+        String file_name = base_folder + folder_name_x +"_"+ folder_name_y +"/"+ block_x +"_"+ block_y; //  /maps/123_456/777_888
+
+        if( memBlocks.blocks_map.count( file_name)){ // if contains
+            assert( memBlocks.blocks[ memBlocks.blocks_map[file_name] ]);
+            memBlocks.blocks[ memBlocks.blocks_map[file_name] ]->inView = true;
+            log_d("Block in memory: %p", memBlocks.blocks[ memBlocks.blocks_map[file_name] ]);
+        } else {
+            MapBlock* new_block = read_map_block( file_name);
+            assert( new_block);
+            new_block->inView = true;
+            new_block->offset = Point32( min_x, min_y);
+            int i = 0;
+            while( i < MAPBLOCKS_MAX){
+                if( memBlocks.blocks[i] == NULL){
+                    memBlocks.blocks[i] = new_block;
+                    memBlocks.blocks_map[ file_name] = i;
+                    break;
+                }
+                i++;
             }
+            assert( i < MAPBLOCKS_MAX);  // TODO: handle replacement of block when array is full. Free removed blocks.
+            log_d("Block readed from SD card: %p", new_block);
         }
-        // log_d("FreeHeap: %i %i", esp_get_free_heap_size(), esp_get_minimum_free_heap_size());
-    }
-    mmap.polygons.shrink_to_fit();
-    file.close();
-    log_d("Done! polygons: %i Points:%i Total memory:%i", mmap.polygons.size(), total_points, mmap.polygons.size()*20 + total_points*4);
-}
-
-void import_map_features( MemMap& mmap)
-{
-    import_lines( mmap);
-    import_polygons( mmap);
-}
-
-void MemMap::setBounds( Point32 map_center, int32_t map_width, int32_t map_height)
-{
-    bbox = BBox(
-        Point32(    map_center.x - map_width  / 2,
-                    map_center.y - map_height / 2),
-        Point32(    map_center.x + map_width  / 2,
-                    map_center.y + map_height / 2));
+    }   
 }
 
 
-Point32::Point32( char *coords_pair)
-{
-    char *next;
-    x = round( strtod( coords_pair, &next));  // 1st coord
-    y = round( strtod( ++next, NULL));  // 2nd coord
-}
