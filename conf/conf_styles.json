@@ -67,5 +67,22 @@
             "features" : ["amenity","leisure"],
             "color": "grayclear2"
         }
-    ]
+    ],
+    "colors": {
+        "white"        :   "0xFFFF",
+        "black"        :   "0x0000",
+        "red"          :   "0xFA45",
+        "green"        :   "0x76EE",
+        "greenclear"   :   "0x9F93",
+        "greenclear2"  :   "0xCF6E",
+        "blue"         :   "0x227E",
+        "blueclear"    :   "0x6D3E",
+        "cyan"         :   "0xAA1F",
+        "yellow"       :   "0xFFF1",
+        "orange"       :   "0xFCC2",
+        "gray"         :   "0x94B2",
+        "grayclear"    :   "0xAD55",
+        "grayclear2"   :   "0xD69A",
+        "brown"        :   "0xAB00"
+    }
 }

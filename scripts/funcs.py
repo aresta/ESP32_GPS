@@ -117,7 +117,7 @@ def style_features( features, styles):
         conf_styles = styles['lines'] if feat['geom_type'] in ('LineString','MultiLineString') else styles['polygons']
         for style_item in conf_styles:
             if feature_type in style_item['features'] or feature_type_group in style_item['features']:
-                if 'color' in style_item: feature_color = style_item['color']
+                if 'color' in style_item: feature_color = styles["colors"][ style_item['color']]
                 if 'width' in style_item: feature_width = style_item['width']
                 found = True
                 break # keep first match
@@ -138,13 +138,23 @@ def draw_feature( draw: ImageDraw, coordinates: LineString, color, width, screen
     min_x = screen_center.x - PIXEL_SIZE*SCREEN_WIDTH/2
     min_y = screen_center.y - PIXEL_SIZE*SCREEN_HEIGHT/2
     points = [ ( (x-min_x)/PIXEL_SIZE, SCREEN_HEIGHT-(y-min_y)/PIXEL_SIZE ) for x,y in coordinates.coords]
-
-    if   color == 'green':       color = 0xAADDAA
-    elif color == 'greenclear':  color = 0xBAEEBA
-    elif color == 'greenclear2': color = 0xBCFFBC
-    elif color == 'grayclear':   color = 0xBFBFBF
-    elif color == 'grayclear2':  color = 0xCFCFCF
-    elif color == 'blueclear':   color = 0xBBBBFF
+    # fix this, convert from rgb565 to rgb888
+    if   color == '0x76EE': color = 0xAADDAA # green
+    elif color == '0x9F93': color = 0xBAEEBA # greenclear
+    elif color == '0xCF6E': color = 0xBCFFBC # greenclear2
+    elif color == '0xAD55': color = 0xBFBFBF # grayclear
+    elif color == '0xD69A': color = 0xCFCFCF # grayclear2
+    elif color == '0x6D3E': color = 0xBBBBFF # blueclear
+    elif color == '0x0000': color = "black"
+    elif color == '0xFFFF': color = "white"
+    elif color == '0xFA45': color = "red"
+    elif color == '0x76EE': color = "green"
+    elif color == '0x227E': color = "blue"
+    elif color == '0xAA1F': color = "cyan"
+    elif color == '0xFFF1': color = "yellow"
+    elif color == '0xFCC2': color = "orange"
+    elif color == '0x94B2': color = "gray"
+    elif color == '0xAB00': color = "brown"
     
     if type( coordinates) == LinearRing:
         draw.polygon( points, fill = color)

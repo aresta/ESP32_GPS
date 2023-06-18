@@ -39,13 +39,13 @@ for (init_x, init_y) in [
     # extract
     lines = json.load( open( LINES_INPUT_FILE, "r"))
     polygons = json.load( open( POLYGONS_INPUT_FILE, "r"))
-    extracted_polygons = process_features( polygons['features'], conf["polygons"])
     extracted_lines = process_features( lines['features'], conf["lines"])
-    clipped = clip_features( extracted_polygons + extracted_lines, mapblock_bbox)
-
+    extracted_polygons = process_features( polygons['features'], conf["polygons"])
+    clipped_lines = clip_features( extracted_lines, mapblock_bbox)
+    clipped_polygons = clip_features( extracted_polygons, mapblock_bbox)
     # apply styles
-    styled_features = style_features( clipped, styles)
-
+    styled_lines = style_features( clipped_lines, styles)
+    styled_polygons = style_features( clipped_polygons, styles)
 
     # export map files
     features, points = 0,0
@@ -56,43 +56,35 @@ for (init_x, init_y) in [
     folder_name_y = min_y >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS)
     file_name = f"/maps/{folder_name_x}_{folder_name_y}/{block_x}_{block_y}"
     os.makedirs(f"/maps/{folder_name_x}_{folder_name_y}", exist_ok=True)
-    print(f"Files: {file_name}.lmf and .pmf")
+    print(f"File: {file_name}.fmp")
 
-    render_map( features = styled_features, file_name=f"test_{folder_name_x}_{folder_name_y}-{block_x}_{block_y}.png", screen_center = Point( init_x, init_y))
+    render_map( features = styled_polygons + styled_lines, 
+               file_name=f"test_{folder_name_x}_{folder_name_y}-{block_x}_{block_y}.png", 
+               screen_center = Point( init_x, init_y))
 
-    with open( f"{file_name}.lmf", "w", encoding='ascii') as file:
-        file.write( f"offset_x: {min_x}\n")
-        file.write( f"offset_y: {min_y}\n")
-        file.write( f"\n")
-        for feat in styled_features:
-            if type( feat['coordinates']) == LinearRing: continue
+    # TODO: order features by z_order, first the ones to be drawn below the others
+    with open( f"{file_name}.fmp", "w", encoding='ascii') as file:
+        file.write( f"Polygons:{len(styled_polygons)}\n")
+        for feat in styled_polygons:
+            file.write( f"{feat['color']}\n")
+            for coord in feat['coordinates'].coords:
+                file.write( f"{int(round(coord[0] - min_x))},{int(round(coord[1] - min_y))};")
+                points += 1
+            file.write('\n')
+            features += 1
+        print("Lines, points: ", features, points)
+
+        features, points = 0,0
+        file.write( f"Polylines:{len(styled_lines)}\n")
+        for feat in styled_lines:
             file.write( f"{feat['color']}\n")
             file.write( f"{feat['width']}\n")
-            file.write( f"{feat['z_order']}\n")
-            file.write( f"{len(feat['coordinates'].coords)}\n")
             for coord in feat['coordinates'].coords:
                 file.write( f"{int(round(coord[0] - min_x))},{int(round(coord[1] - min_y))};")
                 points += 1
             file.write('\n')
             features += 1
-    print("Lines, points: ", features, points)
-
-    features, points = 0,0
-    with open( f"{file_name}.pmf", "w", encoding='ascii') as file:
-        file.write( f"offset_x: {min_x}\n")
-        file.write( f"offset_y: {min_y}\n")
-        file.write( f"\n")
-        for feat in styled_features:
-            if type( feat['coordinates']) != LinearRing: continue
-            file.write( f"{feat['color']}\n")
-            file.write( f"{feat['z_order']}\n")
-            file.write( f"{len(feat['coordinates'].coords)}\n")
-            for coord in feat['coordinates'].coords:
-                file.write( f"{int(round(coord[0] - min_x))},{int(round(coord[1] - min_y))};")
-                points += 1
-            file.write('\n')
-            features += 1
-    print("Polygons, points: ", features, points)
+        print("Polygons, points: ", features, points)
 
 
 
