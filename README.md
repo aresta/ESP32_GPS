@@ -2,11 +2,13 @@
 
 The goal is to build a portable GPS device that displays a map with your position in a small display.
 
-The device elements:
+You just need to download the map file of your country/area, copy it into the SD card, put the SD card in the device and power on.
 
-- ESP32 micro controller.
+The elements:
+
+- ESP32 Wrover micro controller.
 - GPS module.
-- Small display.
+- Small display. IPS to get a good visibility outdoors.
 - Micro-sd card with the maps data.
 - Vectorial maps data from OpenStreetMap. Basically polylines and polygons to display the roads, paths, rivers, buildings, forest, etc.
 
@@ -14,18 +16,22 @@ I have already built a functional prototype that works.
 
 Here in the protoboard:
 
-![GPS ESP32](/img/esp32_gps_a.jpg)
+![GPS ESP32](/img/esp32_gps_d.jpg)
 
-And a more compact and robust prototype to test outside:
+The wiring:
 
-![GPS ESP32](/img/esp32_gps_b.jpg)
-![GPS ESP32](/img/esp32_gps_c.jpg)
+![GPS ESP32](/img/esp32_gps_wiring.jpg)
 
-I'll post the wiring.
+The MCU should be the ESP32 Wrover to have enough memory, but I haven't found the Fritzing image.  And the pins could be in different positions, just pay attention to the GPIO numbers.
+
+In the final version the plan is to put just the ESP32 without the board, and the rest in a custom PCB behind the display.
+I will create the PCB design in KiCad.
+
+I plan also a version with a small round display in a compact form. The system works with any display size.
 
 The prototype is already functional. It's shows your position in the map with the little triangle, and it refresh as you move. 
 
-It loads a map in a custom file stored in the SD card. The map is created out of an Openstreetmap PBF extract and clipped to a few square kms for testing. The map file creation is done in the computer with some scripts and then copied to the SD card.
+The map is created out of an Openstreetmap PBF extract and clipped to a few square kms for testing. The map file creation is done in the computer with some scripts and then copied to the SD card.
 
 There is still work to do in several different areas.  Any help is welcome!
 
@@ -35,7 +41,7 @@ There is still work to do in several different areas.  Any help is welcome!
 - Test with IPS smaller displays and round (clock) displays.
 - A proper plastic housing.
 - Battery power. AAA or small Li-XX batteries.
-- Replace the ESP32 devkit by an ESP32 wroom or wrover.
+- Show and record the GPX tracks.
 - ...
 
 
