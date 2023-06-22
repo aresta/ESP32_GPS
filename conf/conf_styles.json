@@ -36,8 +36,13 @@
             "width": 1
         },
         {
-            "features" : ["railway.rail"],
+            "features" : ["railway"],
             "color": "black",
+            "width": 2
+        },
+        {
+            "features" : ["natural.coastline"],
+            "color": "yellow",
             "width": 2
         }
     ],
@@ -54,6 +59,10 @@
         {
             "features" : ["natural.water","leisure.swimming_pool","waterway"],
             "color": "blueclear"
+        },
+        {
+            "features" : ["natural.beach"],
+            "color": "yellow"
         },
         {
             "features" : ["landuse.forest","natural.wood"],

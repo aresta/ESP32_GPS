@@ -12,11 +12,18 @@ ViewPort viewPort;
 
 void print_header( Coord& pos)
 {
-    tft.fillRect(0, 0, 240, 25, TFT_YELLOW);
+    tft.fillRect(0, 0, 240, 25, YELLOWCLEAR);
     tft.setCursor(5,5,2);
     tft.print(pos.lng, 4);
     tft.print(" "); tft.print(pos.lat, 4);
     tft.print(" Sats: "); tft.print(pos.satellites);
+}
+
+void print_header( String msg)
+{
+    tft.fillRect(0, 0, 240, 25, YELLOWCLEAR);
+    tft.setCursor(5,5,2);
+    tft.print( msg);
 }
 
 void printFreeMem()
@@ -41,21 +48,22 @@ void setup()
     
     tft.init();
     if(!init_sd_card()) while(true);
-    delay(500);
-    tft.setRotation(2);  // portrait
-    tft.invertDisplay(true);
+    delay(100);
+    tft.setRotation(3);  // portrait
+    tft.invertDisplay( false);
     tft.fillScreen( BACKGROUND_COLOR);
-    tft.fillRect(0, 0, 240, 25, TFT_YELLOW);
+    tft.fillRect(0, 0, 240, 25, YELLOWCLEAR);
     tft.setCursor(5,5,2);
     tft.setTextColor(TFT_BLACK);
     tft.print("Reading map...");
 
-    // Point32 map_center( 225400.0, 5085200.0); // TODO: change to last position
-    Point32 map_center( 226023.09, 5085200.0); // TODO: change to last position
+    // Point32 map_center( 224672.31, 5107378.91); // La Mola
+    Point32 map_center( 235664.91, 5074788.07); // Tibidabo
+    // TODO: keep and show last position
     viewPort.setCenter( map_center);
     get_map_blocks( memBlocks, viewPort.bbox );
-
     draw( tft, viewPort, memBlocks);
+    print_header("Waiting for satellites...");
     // stats(viewPort, mmap);
     printFreeMem();
 }
@@ -71,8 +79,10 @@ void loop()
             viewPort.setCenter( map_center);
             get_map_blocks( memBlocks, viewPort.bbox);
             draw( tft, viewPort, memBlocks);
+            print_header( pos);
             prev_lat = pos.lat;
             prev_lng = pos.lng;
+            delay(200);
     }   
     bool moved = false;
     Point32 p = viewPort.center;
@@ -89,7 +99,7 @@ void loop()
         viewPort.setCenter( p);
         get_map_blocks( memBlocks, viewPort.bbox);
         draw( tft, viewPort, memBlocks);
+        print_header( pos);
     }
-    print_header( pos);
-    delay(500);
+    delay(200);
 }

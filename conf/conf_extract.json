@@ -17,7 +17,7 @@
             },
             "waterway": ["stream","drain","river","canal"]
         },
-        "tags" : "railway" 
+        "tags" : ["railway","natural"]
     },
     "polygons": {
         "feature_types" : {
@@ -26,6 +26,7 @@
             "leisure": [],
             "natural": [],
             "landuse": ["grass","meadow","allotments","brownfield","forest","wood","farmland"]
-        }
+        },
+        "tags" : ["natural"]
     }
 }

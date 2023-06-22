@@ -1,12 +1,17 @@
 from shapely import LineString, LinearRing, Polygon, Point, clip_by_rect
 import PIL.ImageDraw as ImageDraw
 import PIL.Image as Image
+import math
 
-# SCREEN_WIDTH, SCREEN_HEIGHT = 480, 640
-SCREEN_WIDTH, SCREEN_HEIGHT = 4000, 6000
-PIXEL_SIZE = 2 # in meters
+IMG_WIDTH, IMG_HEIGHT = pow( 2, 12), pow( 2, 12) # 4096 x 4096
 BACKGROUND_COLOR = 0xDDDDDD
 
+PI = 3.14159265358979323846264338327950288
+def DEG2RAD(a): return ((a) / (180 / PI))
+def RAD2DEG(a): return ((a) * (180 / PI))
+EARTH_RADIUS = 6378137
+def lat2y( lat): return round( math.log( math.tan( DEG2RAD(lat) / 2 + PI/4 )) * EARTH_RADIUS)
+def lon2x( lon): return round( DEG2RAD(lon) * EARTH_RADIUS)
 
 def parse_tags(tags_str):
     res = dict()
@@ -27,8 +32,6 @@ def get_coordinates( geom ):
     elif geom_type == 'Polygon':
         return LinearRing([ coord for linestring in geom['coordinates'] for coord in linestring  ]) # flatten the list of lists
     elif geom_type == 'MultiPolygon': # TODO: flatten another level
-        # print("MultiPolygon len", len(geom['coordinates']))
-        # for p in geom['coordinates']: print("    *** len", len(p), p)
         return None 
     # elif geom_type == 'GeometryCollection': # TODO
     #     return []    
@@ -56,8 +59,11 @@ def process_features( features, conf ):
                         feature_type_tags.append( feat_subtype_tag + '.' + tags[feat_subtype_tag])
                 break
         if not feature_type:
-            if 'tags' in conf and conf['tags'] in tags:
-                feature_type = conf['tags'] + '.' + tags[conf['tags']]
+            if 'tags' in conf:
+                for tag in conf['tags']:
+                    if tag in tags:
+                        feature_type = tag + '.' + tags[tag]
+                        break
             else:
                 continue
         coordinates = get_coordinates( feature['geometry'] ) 
@@ -79,7 +85,6 @@ def process_features( features, conf ):
     # print("Feature types extracted:")
     # for ft in sorted(feat_found):
     #     print(ft)
-    print("------------------------")
     return extracted
 
 def clip_features( features, bbox: Polygon):
@@ -111,7 +116,7 @@ def style_features( features, styles):
     for feat in features:
         feature_type = feat['type']
         feature_type_group = feat['type'].split('.')[0]
-        feature_color = 'pink' # default
+        feature_color = '0xF972' # default pink
         feature_width = None   # default
         found = False
         conf_styles = styles['lines'] if feat['geom_type'] in ('LineString','MultiLineString') else styles['polygons']
@@ -133,46 +138,31 @@ def style_features( features, styles):
             })
     return styled_features
 
+def color_to_24bits( color565):
+    color565 = int( color565, 16) # convert from hex string
+    r = (color565 >> 8) & 0xF8
+    r |= (r >> 5)
+    g = (color565 >> 3) & 0xFC
+    g |= (g >> 6)
+    b = (color565 << 3) & 0xF8
+    b |= (b >> 5)
+    return (r << 16) | (g << 8) | b
 
-def draw_feature( draw: ImageDraw, coordinates: LineString, color, width, screen_center: Point ):
-    min_x = screen_center.x - PIXEL_SIZE*SCREEN_WIDTH/2
-    min_y = screen_center.y - PIXEL_SIZE*SCREEN_HEIGHT/2
-    points = [ ( (x-min_x)/PIXEL_SIZE, SCREEN_HEIGHT-(y-min_y)/PIXEL_SIZE ) for x,y in coordinates.coords]
+def draw_feature( draw: ImageDraw, coordinates: LineString, color, width, min_x, min_y ):
+    points = [ (( x-min_x), IMG_HEIGHT-(y-min_y) ) for x,y in coordinates.coords]
     # fix this, convert from rgb565 to rgb888
-    if   color == '0x76EE': color = 0xAADDAA # green
-    elif color == '0x9F93': color = 0xBAEEBA # greenclear
-    elif color == '0xCF6E': color = 0xBCFFBC # greenclear2
-    elif color == '0xAD55': color = 0xBFBFBF # grayclear
-    elif color == '0xD69A': color = 0xCFCFCF # grayclear2
-    elif color == '0x6D3E': color = 0xBBBBFF # blueclear
-    elif color == '0x0000': color = "black"
-    elif color == '0xFFFF': color = "white"
-    elif color == '0xFA45': color = "red"
-    elif color == '0x76EE': color = "green"
-    elif color == '0x227E': color = "blue"
-    elif color == '0xAA1F': color = "cyan"
-    elif color == '0xFFF1': color = "yellow"
-    elif color == '0xFCC2': color = "orange"
-    elif color == '0x94B2': color = "gray"
-    elif color == '0xAB00': color = "brown"
+    color = color_to_24bits( color)
     
     if type( coordinates) == LinearRing:
         draw.polygon( points, fill = color)
-        # draw.line( points, fill=0x55BB55)
-        # for p in points: draw.point( p, "red")
     else:
-        if not width: width = 1
-        else:
-            width =  round(width/PIXEL_SIZE)
-            if width == 0: width = 1
+        width = max( round( width), 1) if width else 1
         draw.line( points, fill = color, width = width)
-        # draw.point( points[0], "red")
-        # draw.point( points[-1], "red")
 
 
-def render_map( features, file_name, screen_center: Point):
-    image = Image.new("RGB", (SCREEN_WIDTH, SCREEN_HEIGHT), color=BACKGROUND_COLOR)
+def render_map( features, file_name, min_x, min_y):
+    image = Image.new("RGB", (IMG_WIDTH, IMG_HEIGHT), color=BACKGROUND_COLOR)
     draw = ImageDraw.Draw(image)
     for feat in features:
-        draw_feature( draw, feat['coordinates'], feat['color'], feat['width'], screen_center)
+        draw_feature( draw, feat['coordinates'], feat['color'], feat['width'], min_x=min_x, min_y=min_y)
     image.save( file_name)

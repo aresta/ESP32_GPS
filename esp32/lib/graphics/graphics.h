@@ -14,12 +14,13 @@ const uint16_t GREENCLEAR2  =   0xCF6E;
 const uint16_t BLUE         =   0x227E;
 const uint16_t BLUECLEAR    =   0x6D3E;
 const uint16_t CYAN         =   0xAA1F;
-const uint16_t YELLOW       =   0xFFF1;
 const uint16_t ORANGE       =   0xFCC2;
 const uint16_t GRAY         =   0x94B2;
 const uint16_t GRAYCLEAR    =   0xAD55;
 const uint16_t GRAYCLEAR2   =   0xD69A;
 const uint16_t BROWN        =   0xAB00;
+const uint16_t YELLOW       =   0xFFF1;
+const uint16_t YELLOWCLEAR  =   0xFFF5;
 const uint16_t BACKGROUND_COLOR = 0xEF5D;
 
 /// @brief Point in 32 bits projected coordinates (x,y) 
@@ -47,19 +48,6 @@ struct Point16 {
     // Point16 operator+(const Point16 p){ return Point16( x+p.x, y+p.y);};
     int16_t x;
     int16_t y;
-};
-
-
-/// @brief Point in geografic (lat,lon) coordinates and other gps data
-struct Coord {
-    Point32 getPoint32();
-    double lat = 0;
-    double lng = 0;
-    int16_t altitude = 0;
-    int16_t direction = 0;
-    int16_t satellites = 0;
-    bool isValid = false;
-    bool isUpdated = false;
 };
 
 

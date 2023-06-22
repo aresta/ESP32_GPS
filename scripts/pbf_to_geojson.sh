@@ -7,26 +7,15 @@
 
 # /maps/osmium extract -p ../conf/clip_bcn.geojson spain-latest.osm.pbf -o /pbf/bcn.pbf
 
-# ogr2ogr -t_srs EPSG:3857 -clipdst 218500 5075000 235000 5095000 -simplify 0.000005 \
-#     /maps/points.geojson /pbf/bcn.pbf \
-#     points
+rm /maps/lines.geojson
+rm /maps/polygons.geojson
 
 ogr2ogr -t_srs EPSG:3857 \
-    -clipdst 218500 5075000 235000 5095000 \
+    -clipsrc 1.83 41.31 2.28 41.70 \
     /maps/lines.geojson /pbf/bcn.pbf \
     lines
-    # -simplify 0.000005 \
-
-# ogr2ogr -t_srs EPSG:3857 -clipdst 218500 5075000 235000 5095000 -simplify 0.000005 \
-#     /maps/relations.geojson /pbf/bcn.pbf \
-#     multilinestrings # relations...
 
 ogr2ogr -t_srs EPSG:3857 \
-    -clipdst 218500 5075000 235000 5095000 \
+    -clipsrc 1.83 41.31 2.28 41.70 \
     /maps/polygons.geojson /pbf/bcn.pbf \
     multipolygons
-    # -simplify 0.000005 \
-
-
-
-# ogr2ogr -t_srs EPSG:3857 -clipdst 218000 5070000 231000 5100000 -simplify 0.000005  /maps/lines.geojson /pbf/bcn.pbf lines
