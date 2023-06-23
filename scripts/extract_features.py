@@ -63,7 +63,7 @@ for init_x in range(area_min_x, area_max_x, 4096):
         print(f"File: {file_name}.fmp")
 
         os.makedirs(f"./test_imgs", exist_ok=True)
-        render_map( features = clipped_lines + clipped_polygons, 
+        render_map( features = clipped_polygons + clipped_lines, 
                 file_name=f"./test_imgs/test_{folder_name_x}_{folder_name_y}-{block_x}_{block_y}.png", 
                 min_x=min_x, min_y=min_y)
 
