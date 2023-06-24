@@ -4,11 +4,14 @@
 #include "gps.h"
 #include "graphics.h"
 #include <TFTShape.h>
+#include "../lib/conf.h"
 
 TFT_eSPI tft = TFT_eSPI();
 HardwareSerial SerialGPS(2);
 MemBlocks memBlocks;
 ViewPort viewPort;
+int pixel_size = PIXEL_SIZE_DEF;
+int mode = MODE_MOVE;
 
 void print_header( Coord& pos)
 {
@@ -17,13 +20,7 @@ void print_header( Coord& pos)
     tft.print(pos.lng, 4);
     tft.print(" "); tft.print(pos.lat, 4);
     tft.print(" Sats: "); tft.print(pos.satellites);
-}
-
-void print_header( String msg)
-{
-    tft.fillRect(0, 0, 240, 25, YELLOWCLEAR);
-    tft.setCursor(5,5,2);
-    tft.print( msg);
+    tft.print(" M: "); tft.print( mode);
 }
 
 void printFreeMem()
@@ -45,25 +42,33 @@ void setup()
 #endif
     digitalWrite(15, HIGH); // TFT screen chip select
     digitalWrite(13, HIGH); // SD card chips select
+
+    // butons
+    pinMode( UP_BUTTON, INPUT_PULLUP);
+    pinMode( DOWN_BUTTON, INPUT_PULLUP);
+    pinMode( LEFT_BUTTON, INPUT_PULLUP);
+    pinMode( RIGHT_BUTTON, INPUT_PULLUP);
+    pinMode( SELECT_BUTTON, INPUT_PULLUP);
     
     tft.init();
-    if(!init_sd_card()) while(true);
     delay(100);
     tft.setRotation(3);  // portrait
     tft.invertDisplay( false);
     tft.fillScreen( BACKGROUND_COLOR);
-    tft.fillRect(0, 0, 240, 25, YELLOWCLEAR);
-    tft.setCursor(5,5,2);
     tft.setTextColor(TFT_BLACK);
-    tft.print("Reading map...");
+    header_msg("Initializing...");    
+    if(!init_sd_card()) while(true);
+    header_msg("Reading map...");
 
+    Point32 map_center( 225680.32, 5084950.61);
     // Point32 map_center( 224672.31, 5107378.91); // La Mola
-    Point32 map_center( 235664.91, 5074788.07); // Tibidabo
+    // Point32 map_center( 235664.91, 5074788.07); // Tibidabo
+    // Point32 map_center( 244808.69, 5070020.31); // bcn
     // TODO: keep and show last position
     viewPort.setCenter( map_center);
     get_map_blocks( memBlocks, viewPort.bbox );
-    draw( tft, viewPort, memBlocks);
-    print_header("Waiting for satellites...");
+    draw( viewPort, memBlocks);
+    header_msg( "Waiting for satellites...");
     // stats(viewPort, mmap);
     printFreeMem();
 }
@@ -78,7 +83,7 @@ void loop()
             Point32 map_center = pos.getPoint32();
             viewPort.setCenter( map_center);
             get_map_blocks( memBlocks, viewPort.bbox);
-            draw( tft, viewPort, memBlocks);
+            draw( viewPort, memBlocks);
             print_header( pos);
             prev_lat = pos.lat;
             prev_lng = pos.lng;
@@ -86,20 +91,40 @@ void loop()
     }   
     bool moved = false;
     Point32 p = viewPort.center;
-    while( Serial.available()){
-        char key = Serial.read();
-        if( key == 0x1B || key == 0x5B) continue;  // skip ESC...
-        if( key == 0x44)     p.x -= 50; // left arrow key
-        else if(key == 0x43) p.x += 50; // rigth
-        else if(key == 0x41) p.y += 50; // up
-        else if(key == 0x42) p.y -= 50; // down
-        moved = true;
+
+    if( digitalRead( SELECT_BUTTON) == LOW){
+        mode += 1;
+        if( mode > MODE_MENU) mode = MODE_NAV;
+        print_header( pos);
+        delay( 400);
     }
+    if( mode == MODE_MOVE){
+        if( digitalRead( UP_BUTTON) == LOW)    { p.y += 20*pixel_size; moved = true; }
+        if( digitalRead( DOWN_BUTTON) == LOW)  { p.y -= 20*pixel_size; moved = true; }
+        if( digitalRead( LEFT_BUTTON) == LOW)  { p.x -= 20*pixel_size; moved = true; }
+        if( digitalRead( RIGHT_BUTTON) == LOW) { p.x += 20*pixel_size; moved = true; }
+    }
+    if( mode == MODE_ZOOM){
+        if( digitalRead( UP_BUTTON) == LOW)    { pixel_size += 1; moved = true; }
+        if( digitalRead( DOWN_BUTTON) == LOW)  { pixel_size -= 1; moved = true; }
+        if( pixel_size < 1) pixel_size = 1;
+        if( pixel_size > 6) pixel_size = 6;
+    }
+    // while( Serial.available()){
+    //     char key = Serial.read();
+    //     if( key == 0x1B || key == 0x5B) continue;  // skip ESC...
+    //     if( key == 0x44)     p.x -= 50; // left arrow key
+    //     else if(key == 0x43) p.x += 50; // rigth
+    //     else if(key == 0x41) p.y += 50; // up
+    //     else if(key == 0x42) p.y -= 50; // down
+    //     moved = true;
+    // }
     if( moved) {
         viewPort.setCenter( p);
         get_map_blocks( memBlocks, viewPort.bbox);
-        draw( tft, viewPort, memBlocks);
+        draw( viewPort, memBlocks);
         print_header( pos);
+        delay( 10);
     }
-    delay(200);
+    // delay(200);
 }

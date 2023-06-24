@@ -6,18 +6,22 @@
 #include "graphics.h"
 #include "maps.h"
 
-const String base_folder = "/maps/"; // TODO: folder selection
+const String base_folder = "/mymap/"; // TODO: folder selection
 
 bool init_sd_card()
 {
     if (!SD.begin(13)) {
         Serial.println("Card Mount Failed");
+        header_msg("Card Mount Failed");
+        while(true);
         return false;
     }
     uint8_t cardType = SD.cardType();
     
     if (cardType == CARD_NONE) {
         Serial.println("No SD card attached");
+        header_msg("No SD card attached");
+        while(true);
         return false;
     }
     
@@ -60,14 +64,20 @@ MapBlock* read_map_block( String file_name)
 {
     MapBlock* mblock = new MapBlock();
     File file = SD.open( file_name + ".fmp");
-    assert( file);
+    if( !file){
+        header_msg("Map file not found in folder: " + base_folder);
+        while(true);
+    }
     ReadBufferingStream bufferedFile{ file, 1000};
 
     // read polygons
     String feature_type = bufferedFile.readStringUntil(':');
     if( feature_type != "Polygons") log_e("Map error. Expected Polygons instead of: %s", feature_type);
     u_int32_t count = bufferedFile.readStringUntil('\n').toInt();
-    assert( count > 0);
+    if( count <= 0){
+        header_msg("Error: wrong number of poligons: " + count);
+        while(true);
+    }
     int line = 5;
     int total_points = 0;
     Polygon polygon;
@@ -81,14 +91,20 @@ MapBlock* read_map_block( String file_name)
         total_points += polygon.points.size();
         count--;
     }
-    assert( count == 0);
+    if( count != 0){
+        header_msg("ERROR: Polygons count don't match");
+        while(true);
+    }
     mblock->polygons.shrink_to_fit();
 
     // read lines
     feature_type = bufferedFile.readStringUntil(':');
     if( feature_type != "Polylines") log_e("Map error. Expected Polylines instead of: %s", feature_type);
     count = bufferedFile.readStringUntil('\n').toInt();
-    assert( count > 0);
+    if( count <= 0){
+        header_msg("Error: wrong number of lines: " + count);
+        while(true);
+    }
     Polyline polyline;
     while( count > 0 && bufferedFile.available()){
         polyline.color = std::stoul( bufferedFile.readStringUntil('\n').c_str(), nullptr, 16);
@@ -102,7 +118,10 @@ MapBlock* read_map_block( String file_name)
         total_points += polyline.points.size();
         count--;
     }
-    assert( count == 0);
+    if( count != 0){
+        header_msg("ERROR: Lines count don't match");
+        while(true);
+    }
     mblock->polylines.shrink_to_fit();
     file.close();
     return mblock;
@@ -144,6 +163,7 @@ void get_map_blocks( MemBlocks& memBlocks, BBox& bbox)
             }
             assert( i < MAPBLOCKS_MAX);  // TODO: handle replacement of block when array is full. Free removed blocks.
             log_d("Block readed from SD card: %p", new_block);
+            log_d("FreeHeap: %i", esp_get_free_heap_size());
         }
     }   
 }

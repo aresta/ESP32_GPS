@@ -23,6 +23,8 @@ const uint16_t YELLOW       =   0xFFF1;
 const uint16_t YELLOWCLEAR  =   0xFFF5;
 const uint16_t BACKGROUND_COLOR = 0xEF5D;
 
+extern TFT_eSPI tft;
+
 /// @brief Point in 32 bits projected coordinates (x,y) 
 struct Point32 {
     Point32(){};
@@ -90,10 +92,10 @@ struct ViewPort {
 
 struct MapBlock;
 struct MemBlocks;
-void draw( TFT_eSPI& tft, ViewPort& viewPort, MemBlocks& memblocks);
+void draw( ViewPort& viewPort, MemBlocks& memblocks);
 Point16 toScreenCoords( Point16 p, Point16 screen_center);
-void fill_polygon( TFT_eSPI& tft,  std::vector<Point16> points, int color);
 std::vector<Point16> clip_polygon( BBox bbox, std::vector<Point16>  points);
 void stats( ViewPort& viewPort, MapBlock* mblock);
+void header_msg( String msg);
 
 #endif
