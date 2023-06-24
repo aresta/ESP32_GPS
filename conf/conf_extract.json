@@ -15,7 +15,9 @@
                 "tertiary" : [],
                 "motorway" : []
             },
-            "waterway": ["stream","drain","river","canal"]
+            "waterway": ["stream","drain","river","canal"],
+            "railway": [],
+            "natural": ["coastline"]
         },
         "tags" : ["railway","natural"]
     },
@@ -24,7 +26,7 @@
             "building": [],
             "amenity": [],
             "leisure": [],
-            "natural": [],
+            "natural": ["beach"],
             "landuse": ["grass","meadow","allotments","brownfield","forest","wood","farmland"]
         },
         "tags" : ["natural"]
