@@ -9,6 +9,7 @@ LINES_INPUT_FILE = '/maps/lines.geojson'
 POLYGONS_INPUT_FILE = '/maps/polygons.geojson'
 CONF_FEATURES = '/conf/conf_extract.json'
 CONF_STYLES = '/conf/conf_styles.json'
+MAP_FOLDER = '/maps/mymap'
 
 MAPBLOCK_SIZE_BITS = 12     # 4096 x 4096 coords (~meters) per block  
 MAPFOLDER_SIZE_BITS = 4     # 16 x 16 map blocks per folder
@@ -18,6 +19,8 @@ mapfolder_mask = pow( 2, MAPFOLDER_SIZE_BITS) - 1    # ...00001111
 conf = json.load( open( CONF_FEATURES, "r"))
 styles = json.load( open(CONF_STYLES, "r"))
 
+# min_lat, min_lon = 41.41, 1.97
+# max_lat, max_lon = 41.54, 2.11
 min_lat, min_lon = 41.31, 1.83
 max_lat, max_lon = 41.70, 2.28
 area_min_x, area_min_y = lon2x( min_lon), lat2y( min_lat)
@@ -58,8 +61,8 @@ for init_x in range(area_min_x, area_max_x, 4096):
         block_y = (min_y >> MAPBLOCK_SIZE_BITS) & mapfolder_mask
         folder_name_x = min_x >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS)
         folder_name_y = min_y >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS)
-        file_name = f"/maps/{folder_name_x}_{folder_name_y}/{block_x}_{block_y}"
-        os.makedirs(f"/maps/{folder_name_x}_{folder_name_y}", exist_ok=True)
+        file_name = f"{MAP_FOLDER}/{folder_name_x}_{folder_name_y}/{block_x}_{block_y}"
+        os.makedirs(f"{MAP_FOLDER}/{folder_name_x}_{folder_name_y}", exist_ok=True)
         print(f"File: {file_name}.fmp")
 
         os.makedirs(f"./test_imgs", exist_ok=True)
@@ -71,6 +74,7 @@ for init_x in range(area_min_x, area_max_x, 4096):
         with open( f"{file_name}.fmp", "w", encoding='ascii') as file:
             file.write( f"Polygons:{len(clipped_polygons)}\n")
             for feat in clipped_polygons:
+                # file.write( f"id:{feat['id']}\n")  # TODO: remove!
                 file.write( f"{feat['color']}\n")
                 for coord in feat['coordinates'].coords:
                     file.write( f"{int(round(coord[0] - min_x))},{int(round(coord[1] - min_y))};")
@@ -82,6 +86,7 @@ for init_x in range(area_min_x, area_max_x, 4096):
             features, points = 0,0
             file.write( f"Polylines:{len(clipped_lines)}\n")
             for feat in clipped_lines:
+                # file.write( f"id:{feat['id']}\n")  # TODO: remove!
                 file.write( f"{feat['color']}\n")
                 file.write( f"{feat['width']}\n")
                 for coord in feat['coordinates'].coords:

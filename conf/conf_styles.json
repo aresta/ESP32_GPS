@@ -31,6 +31,11 @@
             "width": 12
         },
         {
+            "features" : ["highway"],
+            "color": "white",
+            "width": 3
+        },
+        {
             "features" : ["waterway.stream","waterway.river","waterway.drain","waterway"],
             "color": "cyan",
             "width": 1
@@ -52,7 +57,7 @@
             "color": "grayclear"
         },
         {
-            "features" : ["natural","landuse.grass","landuse.meadow","landuse.allotments","leisure.park","leisure.garden",
+            "features" : ["landuse.grass","landuse.meadow","landuse.allotments","leisure.park","leisure.garden",
                 "leisure.pitch","leisure.golf_course"],
             "color": "greenclear"
         },
@@ -71,6 +76,10 @@
         {
             "features" : ["landuse.farmland"],
             "color": "greenclear2"
+        },
+        {
+            "features" : ["natural"],
+            "color": "greenclear"
         },
         {
             "features" : ["amenity","leisure"],
