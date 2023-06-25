@@ -15,9 +15,10 @@ extern int pixel_size;
 #define RIGHT_BUTTON 12
 #define SELECT_BUTTON 22
 
-#define MODE_NAV 1
-#define MODE_MOVE 2
-#define MODE_ZOOM 3
-#define MODE_MENU 4
+#define DEVMODE_NAV 1
+#define DEVMODE_MOVE 2
+#define DEVMODE_ZOOM 3
+#define DEVMODE_MENU 4
+
 
 #endif

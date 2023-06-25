@@ -67,14 +67,13 @@ void draw( ViewPort& viewPort, MemBlocks& memblocks)
     std::vector<Polyline> lines_to_draw;
     for( MapBlock* mblock: memblocks.blocks){
         if( !mblock || !mblock->inView) continue;
-        Point32 screen_center_mc = viewPort.center - mblock->offset;  // screen center with features coordinates
+        Point16 screen_center_mc = viewPort.center - mblock->offset;  // screen center with features coordinates
         BBox screen_bbox_mc = viewPort.bbox - mblock->offset;  // screen boundaries with features coordinates
         
         ////// Polygons 
         for( Polygon polygon : mblock->polygons){
             if( polygon.color == TFT_YELLOW) log_w("Polygon type unknown");
             Polygon new_polygon;
-            // std::vector<Point16> points2;
             bool hit = false;
             for( Point16 p : polygon.points){
                 if( screen_bbox_mc.contains_point( p)) hit = true;
@@ -84,30 +83,35 @@ void draw( ViewPort& viewPort, MemBlocks& memblocks)
                 new_polygon.color = polygon.color;
                 polygons_to_draw.push_back( new_polygon);
             }
-            // fill_polygon( points2, polygon.color);
         }
         
         ////// Lines 
         for( Polyline line : mblock->polylines){
             Polyline new_line;
-            bool hit = false;
+            new_line.color = line.color;
+            new_line.width = line.width;
             bool prev_in_screen = false;
             for( int i=0; i < (line.points.size()); i++) {
                 bool curr_in_screen = screen_bbox_mc.contains_point( line.points[i]);
-                if( !prev_in_screen && !curr_in_screen){  // TODO: could still cut the screen area!
-                    prev_in_screen = curr_in_screen;
+                if( !prev_in_screen && !curr_in_screen){  // TODO: clip, the segment could still intersect the screen area!
+                    prev_in_screen = false;
                     continue;
                     }
-                if( !prev_in_screen && curr_in_screen && i > 0){
+                if( prev_in_screen && !curr_in_screen){  // split polyline: end and start new polyline. Driver does the clipping of the segment.
+                    new_line.points.push_back( toScreenCoords( line.points[i], screen_center_mc));  
+                    lines_to_draw.push_back( new_line);
+                    new_line.points.clear();
+                    prev_in_screen = false;
+                    continue;
+                }
+                if( !prev_in_screen && curr_in_screen && i > 0){  // reenter screen.  Driver does the clipping
                     new_line.points.push_back( toScreenCoords( line.points[i-1], screen_center_mc));
                 }
                 new_line.points.push_back( toScreenCoords( line.points[i], screen_center_mc));
-                hit = true;
                 prev_in_screen = curr_in_screen;
             }
-            if( hit){
-                new_line.color = line.color;
-                new_line.width = line.width;
+            assert( new_line.points.size() != 1);
+            if( new_line.points.size() >= 2){
                 lines_to_draw.push_back( new_line);
             }
         }
@@ -116,17 +120,17 @@ void draw( ViewPort& viewPort, MemBlocks& memblocks)
 
     for( Polygon pol: polygons_to_draw){
         fill_polygon( pol.points, pol.color);
-        // empty polygons test
-        // for( int i=0; i < (pol.points.size() - 1); i++) {  
-        //         tft.drawLine(
-        //         pol.points[i].x, SCREEN_HEIGHT - pol.points[i].y,
-        //         pol.points[i+1].x, SCREEN_HEIGHT - pol.points[i+1].y,
-        //         pol.color);
-        // }    
     }
     for( Polyline line: lines_to_draw){
         for( int i=0; i < (line.points.size() - 1); i++) {
-                tft.drawWideLine(
+            if( line.points[i].x < 0 || line.points[i+1].x < 0 ||
+                line.points[i].x > SCREEN_WIDTH || line.points[i+1].x > SCREEN_WIDTH ||
+                line.points[i].y < 0 || line.points[i].y > SCREEN_HEIGHT ||
+                line.points[i+1].y < 0 || line.points[i+1].y > SCREEN_HEIGHT ){
+                    log_d("Error: point out of screen: %i, %i, %i, %i", line.points[i].x, line.points[i].y, line.points[i+1].x, line.points[i+1].y);
+                    // continue;
+                }
+            tft.drawWideLine(
                 line.points[i].x, SCREEN_HEIGHT - line.points[i].y,
                 line.points[i+1].x, SCREEN_HEIGHT - line.points[i+1].y,
                 line.width/pixel_size ?: 1, line.color, line.color);

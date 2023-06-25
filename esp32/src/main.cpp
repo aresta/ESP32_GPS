@@ -3,7 +3,6 @@
 #include "maps.h"
 #include "gps.h"
 #include "graphics.h"
-#include <TFTShape.h>
 #include "../lib/conf.h"
 
 TFT_eSPI tft = TFT_eSPI();
@@ -11,7 +10,7 @@ HardwareSerial SerialGPS(2);
 MemBlocks memBlocks;
 ViewPort viewPort;
 int pixel_size = PIXEL_SIZE_DEF;
-int mode = MODE_MOVE;
+int mode = DEVMODE_NAV;
 
 void print_header( Coord& pos)
 {
@@ -49,11 +48,11 @@ void setup()
     pinMode( LEFT_BUTTON, INPUT_PULLUP);
     pinMode( RIGHT_BUTTON, INPUT_PULLUP);
     pinMode( SELECT_BUTTON, INPUT_PULLUP);
-    
+
     tft.init();
     delay(100);
-    tft.setRotation(3);  // portrait
-    tft.invertDisplay( false);
+    tft.setRotation(0);  // portrait
+    tft.invertDisplay( true);
     tft.fillScreen( BACKGROUND_COLOR);
     tft.setTextColor(TFT_BLACK);
     header_msg("Initializing...");    
@@ -74,41 +73,42 @@ void setup()
 }
 
 double prev_lat=500, prev_lng=500;
+Coord pos;
 void loop()
 {
-    Coord pos = getPosition( SerialGPS );
-    if( pos.isValid && 
-        abs(pos.lat-prev_lat) > 0.00005 &&
-        abs(pos.lng-prev_lng) > 0.00005 ){
-            Point32 map_center = pos.getPoint32();
-            viewPort.setCenter( map_center);
-            get_map_blocks( memBlocks, viewPort.bbox);
-            draw( viewPort, memBlocks);
-            print_header( pos);
-            prev_lat = pos.lat;
-            prev_lng = pos.lng;
-            delay(200);
-    }   
-    bool moved = false;
     Point32 p = viewPort.center;
-
+    bool moved = false;
+    if( mode == DEVMODE_NAV){
+        pos = getPosition( SerialGPS );
+        if( pos.isValid && 
+            abs(pos.lat-prev_lat) > 0.00005 &&
+            abs(pos.lng-prev_lng) > 0.00005 ){
+                p = pos.getPoint32();
+                prev_lat = pos.lat;
+                prev_lng = pos.lng;
+                moved = true;
+        }   
+    }
     if( digitalRead( SELECT_BUTTON) == LOW){
         mode += 1;
-        if( mode > MODE_MENU) mode = MODE_NAV;
+        if( mode > DEVMODE_MENU){ 
+            mode = DEVMODE_NAV;
+            moved = true; // recenter
+        }
         print_header( pos);
-        delay( 400);
+        delay( 400); // for button debouncing
     }
-    if( mode == MODE_MOVE){
-        if( digitalRead( UP_BUTTON) == LOW)    { p.y += 20*pixel_size; moved = true; }
-        if( digitalRead( DOWN_BUTTON) == LOW)  { p.y -= 20*pixel_size; moved = true; }
-        if( digitalRead( LEFT_BUTTON) == LOW)  { p.x -= 20*pixel_size; moved = true; }
-        if( digitalRead( RIGHT_BUTTON) == LOW) { p.x += 20*pixel_size; moved = true; }
+    if( mode == DEVMODE_MOVE){
+        if( digitalRead( UP_BUTTON) == LOW)    { p.y += 40*pixel_size; moved = true; }
+        if( digitalRead( DOWN_BUTTON) == LOW)  { p.y -= 40*pixel_size; moved = true; }
+        if( digitalRead( LEFT_BUTTON) == LOW)  { p.x -= 40*pixel_size; moved = true; }
+        if( digitalRead( RIGHT_BUTTON) == LOW) { p.x += 40*pixel_size; moved = true; }
     }
-    if( mode == MODE_ZOOM){
+    if( mode == DEVMODE_ZOOM){
         if( digitalRead( UP_BUTTON) == LOW)    { pixel_size += 1; moved = true; }
         if( digitalRead( DOWN_BUTTON) == LOW)  { pixel_size -= 1; moved = true; }
-        if( pixel_size < 1) pixel_size = 1;
-        if( pixel_size > 6) pixel_size = 6;
+        if( pixel_size < 1){ pixel_size = 1; moved = false; } 
+        if( pixel_size > 6){ pixel_size = 6; moved = false; }
     }
     // while( Serial.available()){
     //     char key = Serial.read();
@@ -126,5 +126,4 @@ void loop()
         print_header( pos);
         delay( 10);
     }
-    // delay(200);
 }

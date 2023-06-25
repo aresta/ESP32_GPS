@@ -21,14 +21,6 @@ Coord getPosition(HardwareSerial& serialGPS)
     Coord coord;
     while( serialGPS.available() > 0){
         if( gps.encode( serialGPS.read())){
-            // Serial.print("LAT=");  Serial.println(gps.location.lat(), 6);
-            // Serial.print("LONG="); Serial.println(gps.location.lng(), 6);
-            // Serial.print("ALT=");  Serial.println(gps.altitude.meters());
-            // Serial.print("day ");  Serial.println(gps.date.day());
-            // Serial.print("year ");  Serial.println(gps.date.year());
-            // Serial.print("hour ");  Serial.println(gps.time.hour());
-            // Serial.print("minute ");  Serial.println(gps.time.minute());
-            // Serial.print("satellites ");  Serial.println(gps.satellites.value());
             coord.lat = gps.location.lat();
             coord.lng = gps.location.lng();
             coord.altitude = static_cast<int16_t>(gps.altitude.meters());
@@ -47,3 +39,11 @@ Point32 Coord::getPoint32()
 }
 
 
+// Serial.print("LAT=");  Serial.println(gps.location.lat(), 6);
+// Serial.print("LONG="); Serial.println(gps.location.lng(), 6);
+// Serial.print("ALT=");  Serial.println(gps.altitude.meters());
+// Serial.print("day ");  Serial.println(gps.date.day());
+// Serial.print("year ");  Serial.println(gps.date.year());
+// Serial.print("hour ");  Serial.println(gps.time.hour());
+// Serial.print("minute ");  Serial.println(gps.time.minute());
+// Serial.print("satellites ");  Serial.println(gps.satellites.value());

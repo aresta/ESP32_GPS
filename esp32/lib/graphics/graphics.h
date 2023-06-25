@@ -98,4 +98,12 @@ std::vector<Point16> clip_polygon( BBox bbox, std::vector<Point16>  points);
 void stats( ViewPort& viewPort, MapBlock* mblock);
 void header_msg( String msg);
 
+/// @brief Clips a segment against a bbox and returns the intersection point. 
+/// You should know in advance which point in inside and which outside.
+/// @param p_in Point of the segment that is in the bbox
+/// @param p_out Point of the segment that is out of the bbox
+/// @param bbox clipping area boudaries
+/// @return 
+// Point16 clip_segment( Point16 p_in, Point16 p_out, BBox bbox);
+
 #endif
