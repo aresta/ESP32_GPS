@@ -25,13 +25,15 @@ The wiring:
 The MCU should be the ESP32 Wrover to have enough memory, but I haven't found the Fritzing image.  And the pins could be in different positions, just pay attention to the GPIO numbers.
 
 In the final version the plan is to put just the ESP32 without the board, and the rest in a custom PCB behind the display.
-I will create the PCB design in KiCad.
+I have already create PCB for development in KiCad with battery management, buttons, joystick and some connectors.
+![GPS ESP32](/img/gps_pcb.jpg)
+
 
 I plan also a version with a small round display in a compact form. The system works with any display size.
 
 The prototype is already functional. It's shows your position in the map with the little triangle, and it refresh as you move. 
 
-The map is created out of an Openstreetmap PBF extract and clipped to a few square kms for testing. The map file creation is done in the computer with some scripts and then copied to the SD card.
+The map is created out of an Openstreetmap PBF extract and clipped to a few square kms for testing. The map file creation is done in the computer with some scripts and then copied to the SD card. See project: https://github.com/aresta/OSM_Extract
 
 There is still work to do in several different areas.  Any help is welcome!
 
