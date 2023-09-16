@@ -12,36 +12,45 @@ The elements:
 - Micro-sd card with the maps data.
 - Vectorial maps data from OpenStreetMap. Basically polylines and polygons to display the roads, paths, rivers, buildings, forest, etc.
 
-I have already built a functional prototype that works.
-
-Here in the protoboard:
+First I built a prototype in the protoboard:
 
 ![GPS ESP32](/img/esp32_gps_d.jpg)
 
-The wiring:
+And then I created also a PCB prototype with battery, usb charger, ldo, programmer header, a joystick and two buttons for user interface and other two for reset and program mode:
 
+![GPS ESP32](/img/gps_pcb3.jpg)
+
+![GPS ESP32](/img/gps_pcb2.jpg)
+
+The usb charger and the micro SD-card reader are soldered below. In a final version I could integrate them also in the PCB.
+
+The schematic:
+![GPS ESP32](/img/schematic.jpg)
+
+I will share the kicad project also.
+
+
+The wiring for the basic prototype:
 ![GPS ESP32](/img/esp32_gps_wiring.jpg)
 
-And a PCB for development with battery management, buttons, joystick and some connectors (Kicad files coming soon).
-![GPS ESP32](/img/gps_pcb.jpg)
 
 
 The MCU should be the ESP32 Wrover to have enough memory, but I haven't found the Fritzing image.  And the pins could be in different positions, just pay attention to the GPIO numbers.
 
-In the final version the plan is to put just the ESP32 without the board, and the rest in a custom PCB behind the display.
-
 I plan also a version with a small round display in a compact form. The system works with any display size.
 
-The prototype is already functional. It's shows your position in the map with the little triangle, and it refresh as you move. 
+The prototype is already functional. It's shows your position in the map with the little triangle, it refresh as you move and with the joystick you can move around in the screen, zoom in and out. 
 
 The map is created out of an Openstreetmap PBF extract and clipped to a few square kms for testing. The map file creation is done in the computer with some scripts and then copied to the SD card. See project: https://github.com/aresta/OSM_Extract
 
-There is still work to do in several different areas.  Any help is welcome!
+The map files creation and displaying the elements is already working but there is still work to do. Also in the user interface and the rest of the software.
 
+Any help is welcome!
+
+Todo's:
 - Optimize several aspects related to maps storage and memory.
 - Test with IPS smaller displays and round (clock) displays.
-- A proper plastic housing.
-- Battery power. AAA or small Li-XX batteries.
+- A proper plastic housing and better connections design.
 - Show and record the GPX tracks.
 - ...
 
