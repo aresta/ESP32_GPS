@@ -16,7 +16,7 @@ First I built a prototype in the protoboard:
 
 ![GPS ESP32](/img/esp32_gps_d.jpg)
 
-And then I created also a PCB prototype with battery, usb charger, ldo, programmer header, a joystick and two buttons for user interface and other two for reset and program mode:
+And then I created also a PCB prototype with battery, usb charger, programmer header, a joystick and two buttons for user interface and other two for reset and program mode:
 
 ![GPS ESP32](/img/gps_pcb3.jpg)
 
@@ -41,7 +41,7 @@ I plan also a version with a small round display in a compact form. The system w
 
 The prototype is already functional. It's shows your position in the map with the little triangle, it refresh as you move and with the joystick you can move around in the screen, zoom in and out. 
 
-The map is created out of an Openstreetmap PBF extract and clipped to a few square kms for testing. The map file creation is done in the computer with some scripts and then copied to the SD card. See project: https://github.com/aresta/OSM_Extract
+The map is created out of an Openstreetmap PBF extract and clipped to the desired area. With the current map files system you can extract a quite big area and put the files in the SD card. Storage space is not a problem, so you can have a quite big area of hundreds of kms. The map file creation is done in the computer with some scripts and then copied to the SD card. See project: https://github.com/aresta/OSM_Extract
 
 The map files creation and displaying the elements is already working but there is still work to do. Also in the user interface and the rest of the software.
 
