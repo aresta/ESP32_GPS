@@ -134,9 +134,7 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
 {
     log_d("get_map_blocks %i", millis());
     for( MapBlock* block: memCache.blocks){
-        // log_d("Block: %p", block);
-        if( block) block->inView = false;
-        else break;
+        block->inView = false;
     }
     // loop the 4 corners of the bbox and find the files that contain them
     for( Point32 point: { bbox.min, bbox.max, Point32( bbox.min.x, bbox.max.y), Point32( bbox.max.x, bbox.min.y) }){
@@ -146,7 +144,6 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
         
         // check if the needed block is already in memory
         for( MapBlock* memblock : memCache.blocks){
-            if( ! memblock) break;
             if( block_min_x == memblock->offset.x && block_min_y == memblock->offset.y){
                 memblock->inView = true;
                 found = true;
@@ -155,7 +152,7 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
         }
         if( found) continue;
         
-        log_d("load from disk %i", millis());
+        log_v("load from disk %i", millis());
         // block is not in memory => load from disk
         int32_t block_x = (block_min_x >> MAPBLOCK_SIZE_BITS) & mapfolder_mask;
         int32_t block_y = (block_min_y >> MAPBLOCK_SIZE_BITS) & mapfolder_mask;
@@ -164,29 +161,25 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
         String file_name = base_folder + folder_name_x +"_"+ folder_name_y +"/"+ block_x +"_"+ block_y; //  /maps/123_456/777_888
 
         // check if cache is full
-        if( memCache.size >= MAPBLOCKS_MAX){
-            // remove the first block (the oldest) and shift the rest down
-            delete memCache.blocks[0];
-            for( int i=0; i < memCache.size-1; i++){
-                memCache.blocks[i] = memCache.blocks[i+1];
-            }
-            memCache.size--;
-            memCache.blocks[memCache.size] = NULL;
+        if( memCache.blocks.size() >= MAPBLOCKS_MAX){
+            // remove first one, the oldest
+            log_v("Deleteing freeHeap: %i", esp_get_free_heap_size());
+            delete memCache.blocks.front(); // free memory
+            memCache.blocks.erase( memCache.blocks.begin()); // remove pointer from the vector
+            log_v("Deleted freeHeap: %i", esp_get_free_heap_size());
         }
 
         MapBlock* new_block = read_map_block( file_name);
         new_block->inView = true;
         new_block->offset = Point32( block_min_x, block_min_y);
-        assert( !memCache.blocks[ memCache.size]);
-        memCache.blocks[ memCache.size] = new_block; // add the block to the memory cache
-        memCache.size++;
-        assert( memCache.size <= MAPBLOCKS_MAX);
+        memCache.blocks.push_back( new_block); // add the block to the memory cache
+        assert( memCache.blocks.size() <= MAPBLOCKS_MAX);
 
         log_d("Block readed from SD card: %p", new_block);
         log_d("FreeHeap: %i", esp_get_free_heap_size());
     
     }   
-    log_d("memCache size: %i %i", memCache.size, millis());
+    log_d("memCache size: %i %i", memCache.blocks.size(), millis());
 }
 
 

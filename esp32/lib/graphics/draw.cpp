@@ -66,7 +66,6 @@ void draw( ViewPort& viewPort, MemCache& memCache)
     std::vector<Polygon> polygons_to_draw;
     std::vector<Polyline> lines_to_draw;
     for( MapBlock* mblock: memCache.blocks){
-        if( !mblock) break; // no more blocks
         if( !mblock->inView) continue;
 
         // block to draw

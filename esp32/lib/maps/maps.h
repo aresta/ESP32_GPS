@@ -25,8 +25,7 @@ struct MapBlock {
 
 /// @brief MapBlocks stored in memory
 struct MemCache {
-    u_int8_t size = 0;
-    std::array<MapBlock*, MAPBLOCKS_MAX> blocks;
+    std::vector<MapBlock* > blocks;
 };
 
 bool init_sd_card();
