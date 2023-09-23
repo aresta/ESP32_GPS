@@ -5,24 +5,24 @@
 #include "../conf.h"
 
 
-void ViewPort::setCenter(Point32 pcenter) {
+void ViewPort::setCenter(Point32& pcenter) {
     center = pcenter;
-    bbox.min.x = pcenter.x - SCREEN_WIDTH  * pixel_size / 2;
-    bbox.min.y = pcenter.y - SCREEN_HEIGHT * pixel_size / 2;
-    bbox.max.x = pcenter.x + SCREEN_WIDTH  * pixel_size / 2;
-    bbox.max.y = pcenter.y + SCREEN_HEIGHT * pixel_size / 2;
+    bbox.min.x = pcenter.x - SCREEN_WIDTH  * zoom_level / 2;
+    bbox.min.y = pcenter.y - SCREEN_HEIGHT * zoom_level / 2;
+    bbox.max.x = pcenter.x + SCREEN_WIDTH  * zoom_level / 2;
+    bbox.max.y = pcenter.y + SCREEN_HEIGHT * zoom_level / 2;
 }
 
 Point16 toScreenCoords( Point16 p, Point16 screen_center)
 {
     return Point16(
-        ((p.x - screen_center.x) / pixel_size) + SCREEN_WIDTH / 2,
-        ((p.y - screen_center.y) / pixel_size) + SCREEN_HEIGHT/ 2
+        ((p.x - screen_center.x) / zoom_level) + SCREEN_WIDTH / 2,
+        ((p.y - screen_center.y) / zoom_level) + SCREEN_HEIGHT/ 2
     );
 }
 
 
-std::vector<Point16> clip_polygon( BBox bbox, std::vector<Point16> points)
+std::vector<Point16> clip_polygon( BBox& bbox, std::vector<Point16>& points)
 {
     std::vector<Point16> clipped;
     int16_t dx, dy, bbpx;

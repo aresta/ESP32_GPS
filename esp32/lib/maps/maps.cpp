@@ -5,6 +5,7 @@
 #include <string>
 #include "graphics.h"
 #include "maps.h"
+#include "../conf.h"
 
 const String base_folder = "/mymap/"; // TODO: folder selection
 
@@ -12,8 +13,6 @@ bool init_sd_card()
 {
     if (!SD.begin(13)) {
         Serial.println("Card Mount Failed");
-        header_msg("Card Mount Failed");
-        while(true);
         return false;
     }
     uint8_t cardType = SD.cardType();
@@ -21,7 +20,6 @@ bool init_sd_card()
     if (cardType == CARD_NONE) {
         Serial.println("No SD card attached");
         header_msg("No SD card attached");
-        while(true);
         return false;
     }
     
@@ -84,6 +82,8 @@ MapBlock* read_map_block( String file_name)
     while( count > 0 && bufferedFile.available()){
         polygon.color = std::stoul( bufferedFile.readStringUntil('\n').c_str(), nullptr, 16);
         line++;
+        polygon.maxzoom = bufferedFile.readStringUntil('\n').toInt() ?: MAX_ZOOM;
+        line++;
         polygon.points.clear();
         parse_coords( bufferedFile, polygon.points);
         line++;
@@ -111,6 +111,8 @@ MapBlock* read_map_block( String file_name)
         line++;
         polyline.width = bufferedFile.readStringUntil('\n').toInt() ?: 1;
         line++;
+        polyline.maxzoom = bufferedFile.readStringUntil('\n').toInt() ?: MAX_ZOOM;
+        line++;
         polyline.points.clear();
         parse_coords( bufferedFile, polyline.points);
         line++;
@@ -128,44 +130,63 @@ MapBlock* read_map_block( String file_name)
 }
 
 
-void get_map_blocks( MemBlocks& memBlocks, BBox& bbox)
+void get_map_blocks( BBox& bbox, MemCache& memCache)
 {
-    for( MapBlock* block: memBlocks.blocks){
+    log_d("get_map_blocks %i", millis());
+    for( MapBlock* block: memCache.blocks){
         // log_d("Block: %p", block);
         if( block) block->inView = false;
+        else break;
     }
+    // loop the 4 corners of the bbox and find the files that contain them
     for( Point32 point: { bbox.min, bbox.max, Point32( bbox.min.x, bbox.max.y), Point32( bbox.max.x, bbox.min.y) }){
-        int32_t min_x = point.x & ( ~mapblock_mask);
-        int32_t min_y = point.y & ( ~mapblock_mask);
-        int32_t block_x = (min_x >> MAPBLOCK_SIZE_BITS) & mapfolder_mask;
-        int32_t block_y = (min_y >> MAPBLOCK_SIZE_BITS) & mapfolder_mask;
-        int32_t folder_name_x = min_x >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
-        int32_t folder_name_y = min_y >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
+        bool found = false;
+        int32_t block_min_x = point.x & ( ~mapblock_mask);
+        int32_t block_min_y = point.y & ( ~mapblock_mask);
+        
+        // check if the needed block is already in memory
+        for( MapBlock* memblock : memCache.blocks){
+            if( ! memblock) break;
+            if( block_min_x == memblock->offset.x && block_min_y == memblock->offset.y){
+                memblock->inView = true;
+                found = true;
+                break;
+            }
+        }
+        if( found) continue;
+        
+        log_d("load from disk %i", millis());
+        // block is not in memory => load from disk
+        int32_t block_x = (block_min_x >> MAPBLOCK_SIZE_BITS) & mapfolder_mask;
+        int32_t block_y = (block_min_y >> MAPBLOCK_SIZE_BITS) & mapfolder_mask;
+        int32_t folder_name_x = block_min_x >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
+        int32_t folder_name_y = block_min_y >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
         String file_name = base_folder + folder_name_x +"_"+ folder_name_y +"/"+ block_x +"_"+ block_y; //  /maps/123_456/777_888
 
-        if( memBlocks.blocks_map.count( file_name)){ // if contains
-            assert( memBlocks.blocks[ memBlocks.blocks_map[file_name] ]);
-            memBlocks.blocks[ memBlocks.blocks_map[file_name] ]->inView = true;
-            log_d("Block in memory: %p", memBlocks.blocks[ memBlocks.blocks_map[file_name] ]);
-        } else {
-            MapBlock* new_block = read_map_block( file_name);
-            assert( new_block);
-            new_block->inView = true;
-            new_block->offset = Point32( min_x, min_y);
-            int i = 0;
-            while( i < MAPBLOCKS_MAX){
-                if( memBlocks.blocks[i] == NULL){
-                    memBlocks.blocks[i] = new_block;
-                    memBlocks.blocks_map[ file_name] = i;
-                    break;
-                }
-                i++;
+        // check if cache is full
+        if( memCache.size >= MAPBLOCKS_MAX){
+            // remove the first block (the oldest) and shift the rest down
+            delete memCache.blocks[0];
+            for( int i=0; i < memCache.size-1; i++){
+                memCache.blocks[i] = memCache.blocks[i+1];
             }
-            assert( i < MAPBLOCKS_MAX);  // TODO: handle replacement of block when array is full. Free removed blocks.
-            log_d("Block readed from SD card: %p", new_block);
-            log_d("FreeHeap: %i", esp_get_free_heap_size());
+            memCache.size--;
+            memCache.blocks[memCache.size] = NULL;
         }
+
+        MapBlock* new_block = read_map_block( file_name);
+        new_block->inView = true;
+        new_block->offset = Point32( block_min_x, block_min_y);
+        assert( !memCache.blocks[ memCache.size]);
+        memCache.blocks[ memCache.size] = new_block; // add the block to the memory cache
+        memCache.size++;
+        assert( memCache.size <= MAPBLOCKS_MAX);
+
+        log_d("Block readed from SD card: %p", new_block);
+        log_d("FreeHeap: %i", esp_get_free_heap_size());
+    
     }   
+    log_d("memCache size: %i %i", memCache.size, millis());
 }
 
 

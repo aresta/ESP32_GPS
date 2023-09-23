@@ -17,19 +17,19 @@ const int32_t mapfolder_mask = pow( 2, MAPFOLDER_SIZE_BITS) - 1;    // ...000011
 /// @brief Map square area of aprox 4096 meters side. Correspond to one single map file.
 struct MapBlock {
     Point32 offset;
-    BBox bbox;
+    // BBox bbox;
     bool inView = false;
     std::vector<Polyline> polylines;
     std::vector<Polygon> polygons;
 };
 
 /// @brief MapBlocks stored in memory
-struct MemBlocks {
-    std::map<String, u_int16_t> blocks_map;     // block offset -> block index
+struct MemCache {
+    u_int8_t size = 0;
     std::array<MapBlock*, MAPBLOCKS_MAX> blocks;
 };
 
 bool init_sd_card();
-void get_map_blocks( MemBlocks& memBlocks, BBox& bbox);
+void get_map_blocks( BBox& bbox, MemCache& memCache);
 
 #endif

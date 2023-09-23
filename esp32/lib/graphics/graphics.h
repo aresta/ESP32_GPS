@@ -13,7 +13,8 @@ const uint16_t GREENCLEAR   =   0x9F93;
 const uint16_t GREENCLEAR2  =   0xCF6E;
 const uint16_t BLUE         =   0x227E;
 const uint16_t BLUECLEAR    =   0x6D3E;
-const uint16_t CYAN         =   0xAA1F;
+const uint16_t CYAN         =   0xB7FF;
+const uint16_t VIOLET       =   0xAA1F;
 const uint16_t ORANGE       =   0xFCC2;
 const uint16_t GRAY         =   0x94B2;
 const uint16_t GRAYCLEAR    =   0xAD55;
@@ -31,6 +32,7 @@ struct Point32 {
     Point32( int32_t x, int32_t y) : x(x),y(y) {};
     Point32 operator-(const Point32 p){ return Point32( x-p.x, y-p.y);};
     Point32 operator+(const Point32 p){ return Point32( x+p.x, y+p.y);};
+    bool operator==(const Point32 p){ return x==p.x && y==p.y; };
 
     /// @brief Parse char array with the coordinates
     /// @param coords_pair char array like:  11.222,333.44
@@ -46,8 +48,6 @@ struct Point16 {
     Point16(){};
     Point16( int16_t x, int16_t y) : x(x),y(y) {};
     Point16( Point32 p): x(p.x), y(p.y) {};
-    // Point16 operator-(const Point16 p){ return Point16( x-p.x, y-p.y);};
-    // Point16 operator+(const Point16 p){ return Point16( x+p.x, y+p.y);};
     int16_t x;
     int16_t y;
 };
@@ -57,12 +57,14 @@ struct Polyline {
     std::vector<Point16> points;
     uint16_t color;
     uint8_t width;
+    uint8_t maxzoom;
 };
 
 
 struct Polygon {
     std::vector<Point16> points;
     uint16_t color;
+    uint8_t maxzoom;
 };
 
 
@@ -81,7 +83,7 @@ struct BBox {
 
 
 struct ViewPort {
-    void setCenter(Point32 pcenter);
+    void setCenter(Point32& pcenter);
     Point32 center;
     BBox bbox;
 };
@@ -90,12 +92,12 @@ struct ViewPort {
 
 /////////////////////  Functions  /////////////////////////
 
+struct MemCache;
 struct MapBlock;
-struct MemBlocks;
-void draw( ViewPort& viewPort, MemBlocks& memblocks);
+void draw( ViewPort& viewPort, MemCache& memCache);
 Point16 toScreenCoords( Point16 p, Point16 screen_center);
-std::vector<Point16> clip_polygon( BBox bbox, std::vector<Point16>  points);
-void stats( ViewPort& viewPort, MapBlock* mblock);
+std::vector<Point16> clip_polygon( BBox& bbox, std::vector<Point16>&  points);
+void stats( ViewPort& viewPort, MapBlock& mblock);
 void header_msg( String msg);
 
 /// @brief Clips a segment against a bbox and returns the intersection point. 

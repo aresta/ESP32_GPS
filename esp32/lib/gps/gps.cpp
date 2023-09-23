@@ -28,6 +28,9 @@ Coord getPosition(HardwareSerial& serialGPS)
             coord.isValid = gps.location.isValid();
             coord.isUpdated = gps.location.isUpdated();
             coord.satellites = static_cast<int16_t>(gps.satellites.value());
+            coord.hour = gps.time.hour();
+            coord.minute = gps.time.minute();
+            coord.second = gps.time.second();
         }
     }    
     return coord;

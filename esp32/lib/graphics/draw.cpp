@@ -16,9 +16,9 @@ void fill_polygon( std::vector<Point16> points, int color) // scanline fill algo
     }
     if( maxy > SCREEN_HEIGHT) maxy = SCREEN_HEIGHT;
     if( miny < 0) miny = 0;
-    assert( miny < maxy);
-
-    // log_d("miny: %i, maxy: %i", miny, maxy);
+    if(miny >= maxy){
+        return;
+    }
     int16_t nodeX[points.size()], pixelY;
 
     //  Loop through the rows of the image.
@@ -60,19 +60,23 @@ void fill_polygon( std::vector<Point16> points, int color) // scanline fill algo
 }
 
 
-void draw( ViewPort& viewPort, MemBlocks& memblocks)
+void draw( ViewPort& viewPort, MemCache& memCache)
 {
     // tft.fillScreen( BACKGROUND_COLOR);
     std::vector<Polygon> polygons_to_draw;
     std::vector<Polyline> lines_to_draw;
-    for( MapBlock* mblock: memblocks.blocks){
-        if( !mblock || !mblock->inView) continue;
+    for( MapBlock* mblock: memCache.blocks){
+        if( !mblock) break; // no more blocks
+        if( !mblock->inView) continue;
+
+        // block to draw
+        log_d("draw block %i %i", mblock, millis());
         Point16 screen_center_mc = viewPort.center - mblock->offset;  // screen center with features coordinates
         BBox screen_bbox_mc = viewPort.bbox - mblock->offset;  // screen boundaries with features coordinates
         
         ////// Polygons 
         for( Polygon polygon : mblock->polygons){
-            if( polygon.color == TFT_YELLOW) log_w("Polygon type unknown");
+            if( zoom_level > polygon.maxzoom) continue;
             Polygon new_polygon;
             bool hit = false;
             for( Point16 p : polygon.points){
@@ -88,6 +92,7 @@ void draw( ViewPort& viewPort, MemBlocks& memblocks)
         ////// Lines 
         for( Polyline line : mblock->polylines){
             Polyline new_line;
+            if( zoom_level > line.maxzoom) continue;
             new_line.color = line.color;
             new_line.width = line.width;
             bool prev_in_screen = false;
@@ -127,13 +132,13 @@ void draw( ViewPort& viewPort, MemBlocks& memblocks)
                 line.points[i].x > SCREEN_WIDTH || line.points[i+1].x > SCREEN_WIDTH ||
                 line.points[i].y < 0 || line.points[i].y > SCREEN_HEIGHT ||
                 line.points[i+1].y < 0 || line.points[i+1].y > SCREEN_HEIGHT ){
-                    log_d("Error: point out of screen: %i, %i, %i, %i", line.points[i].x, line.points[i].y, line.points[i+1].x, line.points[i+1].y);
-                    // continue;
+                    log_v("Error: point out of screen: %i, %i, %i, %i", line.points[i].x, line.points[i].y, line.points[i+1].x, line.points[i+1].y);
+                    // continue; // TODO: split line?
                 }
             tft.drawWideLine(
                 line.points[i].x, SCREEN_HEIGHT - line.points[i].y,
                 line.points[i+1].x, SCREEN_HEIGHT - line.points[i+1].y,
-                line.width/pixel_size ?: 1, line.color, line.color);
+                line.width/zoom_level ?: 1, line.color, line.color);
         }      
     }
 
@@ -142,23 +147,23 @@ void draw( ViewPort& viewPort, MemBlocks& memblocks)
         SCREEN_WIDTH/2 + 4, SCREEN_HEIGHT/2 + 5, 
         SCREEN_WIDTH/2,     SCREEN_HEIGHT/2 - 6, 
         RED);
-    log_v("Draw done!");
+    log_d("Draw done! %i", millis());
 }
 
-void stats( ViewPort& viewPort, MapBlock* mblock)
+void stats( ViewPort& viewPort, MapBlock& mblock)
 {
-    Point32 screen_center_mc = viewPort.center - mblock->offset;  // screen center with features coordinates
-    BBox screen_bbox_mc = viewPort.bbox - mblock->offset;  // screen boundaries with features coordinates
-    BBox map_bbox_mc = mblock->bbox - mblock->offset;  // screen boundaries with features coordinates
+    Point32 screen_center_mc = viewPort.center - mblock.offset;  // screen center with features coordinates
+    BBox screen_bbox_mc = viewPort.bbox - mblock.offset;  // screen boundaries with features coordinates
+    // BBox map_bbox_mc = mblock.bbox - mblock.offset;  // screen boundaries with features coordinates
 
     ////// Polygons 
     int in_screen = 0, in_map = 0,  points_total = 0;
-    for( Polygon polygon : mblock->polygons){
+    for( Polygon polygon : mblock.polygons){
         bool hit = false;
         for( Point16 p : polygon.points){
             points_total++;
             if( screen_bbox_mc.contains_point( p)) in_screen++;
-            if( map_bbox_mc.contains_point( p)) in_map++;
+            // if( map_bbox_mc.contains_point( p)) in_map++;
         }
     }
     log_i("Polygons points.  in_screen: %i, in_map: %i,  total: %i", in_screen, in_map, points_total);
@@ -167,11 +172,11 @@ void stats( ViewPort& viewPort, MapBlock* mblock)
     in_screen = 0;
     in_map = 0;
     points_total = 0;
-    for( Polyline polyline : mblock->polylines){
+    for( Polyline polyline : mblock.polylines){
         for( Point16 p : polyline.points){
             points_total++;
             if( screen_bbox_mc.contains_point( p)) in_screen++;
-            if( map_bbox_mc.contains_point( p)) in_map++;
+            // if( map_bbox_mc.contains_point( p)) in_map++;
         }
     }
     log_i("Lines points. in_screen: %i,  in_map: %i,  total: %i", in_screen, in_map, points_total);
