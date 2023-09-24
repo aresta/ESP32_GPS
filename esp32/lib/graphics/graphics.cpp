@@ -13,7 +13,7 @@ void ViewPort::setCenter(Point32& pcenter) {
     bbox.max.y = pcenter.y + SCREEN_HEIGHT * zoom_level / 2;
 }
 
-Point16 toScreenCoords( Point16 p, Point16 screen_center)
+Point16 toScreenCoords( Point32 p, Point32 screen_center)
 {
     return Point16(
         ((p.x - screen_center.x) / zoom_level) + SCREEN_WIDTH / 2,
@@ -47,12 +47,21 @@ std::vector<Point16> clip_polygon( BBox& bbox, std::vector<Point16>& points)
     return clipped;
 }
 
-Point32::Point32( char *coords_pair)
+Point16::Point16( char *coords_pair)
 {
     char *next;
-    x = round( strtod( coords_pair, &next));  // 1st coord
-    y = round( strtod( ++next, NULL));  // 2nd coord
+    x = (int16_t )round( strtod( coords_pair, &next));  // 1st coord // TODO: change by strtol and test
+    y = (int16_t )round( strtod( ++next, NULL));  // 2nd coord
 }
+
+bool BBox::contains_point(const Point32 p){ return p.x > min.x && p.x < max.x && p.y > min.y && p.y < max.y; }
+
+bool BBox::intersects( BBox b){ return 
+    b.contains_point( max) || b.contains_point( min) ||
+    b.contains_point( Point16(min.x, max.y)) || b.contains_point( Point16(max.x, min.y)) ||
+    contains_point( b.min) || contains_point( b.max) ||
+    contains_point( Point16( b.min.x, b.max.y)) || contains_point( Point16(b.max.x, b.min.y));
+    }
 
 void header_msg( String msg)
 {
@@ -61,29 +70,3 @@ void header_msg( String msg)
     tft.print( msg);
 }
 
-
-
-// Point16 clip_segment( Point16 p_in, Point16 p_out, BBox bbox)
-// {
-//     Point16 res;
-//     if( p_out.x < bbox.min.x){
-//         res.x = bbox.min.x;
-//         // res.y =  
-//     } else if( p_out.x > bbox.max.x){
-//         res.x = bbox.max.x;
-//         // res.y =  
-//     } else{
-//         res.x = p_out.x;
-//     }
-
-//     if( p_out.y < bbox.min.y){
-//         res.y = bbox.min.y;
-//         // res.x =
-//     } else if( p_out.y > bbox.max.y){
-//         res.y = bbox.max.y;
-//         // res.x =  
-//     } else {
-//         res.y = p_out.y;
-//     }
-//     // WIP
-// }

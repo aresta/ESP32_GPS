@@ -6,38 +6,35 @@
 
 
 
-void fill_polygon( std::vector<Point16> points, int color) // scanline fill algorithm
+void fill_polygon( Polygon p) // scanline fill algorithm
 {
-    int16_t maxy = INT16_MIN, miny = INT16_MAX;
+    int16_t maxy = p.bbox.max.y;
+    int16_t miny = p.bbox.min.y;
 
-    for( Point16 p : points) { // TODO: precalculate at map file creation
-        maxy = max( maxy, p.y);
-        miny = min( miny, p.y);
-    }
     if( maxy > SCREEN_HEIGHT) maxy = SCREEN_HEIGHT;
     if( miny < 0) miny = 0;
     if(miny >= maxy){
         return;
     }
-    int16_t nodeX[points.size()], pixelY;
+    int16_t nodeX[p.points.size()], pixelY;
 
     //  Loop through the rows of the image.
+    int16_t nodes, i , swap;
     for( pixelY=miny; pixelY < maxy; pixelY++) {
         //  Build a list of nodes.
-        int16_t nodes=0;
-        for( int i=0; i < (points.size() - 1); i++) {
-            if( (points[i].y < pixelY && points[i+1].y >= pixelY) ||
-                (points[i].y >= pixelY && points[i+1].y < pixelY)) {
+        nodes=0;
+        for( int i=0; i < (p.points.size() - 1); i++) {
+            if( (p.points[i].y < pixelY && p.points[i+1].y >= pixelY) ||
+                (p.points[i].y >= pixelY && p.points[i+1].y < pixelY)) {
                     nodeX[nodes++] = 
-                        points[i].x + double(pixelY-points[i].y)/double(points[i+1].y-points[i].y) * 
-                        double(points[i+1].x-points[i].x);
+                        p.points[i].x + double(pixelY-p.points[i].y)/double(p.points[i+1].y-p.points[i].y) * 
+                        double(p.points[i+1].x-p.points[i].x);
                 }
         }
-        assert( nodes < points.size());
-        // log_d("pixelY: %i, nodes: %i", pixelY, nodes);
+        assert( nodes < p.points.size());
 
         //  Sort the nodes, via a simple “Bubble” sort.
-        int16_t i=0, swap;
+        i=0;
         while( i < nodes-1) {   // TODO: rework
             if( nodeX[i] > nodeX[i+1]) {
                 swap=nodeX[i]; nodeX[i]=nodeX[i+1]; nodeX[i+1]=swap; 
@@ -47,14 +44,12 @@ void fill_polygon( std::vector<Point16> points, int color) // scanline fill algo
         }
 
         //  Fill the pixels between node pairs.
-        // log_d("Polygon: %i, %i", nodes, color);
         for (i=0; i <= nodes-2; i+=2) {
             if( nodeX[i] >= SCREEN_WIDTH) break;
             if( nodeX[i+1] <= 0 ) continue;
             if (nodeX[i] < 0 ) nodeX[i] = 0;
             if (nodeX[i+1] > SCREEN_WIDTH) nodeX[i+1]=SCREEN_WIDTH;
-            // log_d("drawLine: %i, %i, %i, %i", nodeX[i], pixelY, nodeX[i+1], pixelY);
-            tft.drawLine( nodeX[i], SCREEN_HEIGHT - pixelY, nodeX[i+1], SCREEN_HEIGHT - pixelY, color);
+            tft.drawLine( nodeX[i], SCREEN_HEIGHT - pixelY, nodeX[i+1], SCREEN_HEIGHT - pixelY, p.color);
         }
     }
 }
@@ -62,86 +57,61 @@ void fill_polygon( std::vector<Point16> points, int color) // scanline fill algo
 
 void draw( ViewPort& viewPort, MemCache& memCache)
 {
-    // tft.fillScreen( BACKGROUND_COLOR);
-    std::vector<Polygon> polygons_to_draw;
-    std::vector<Polyline> lines_to_draw;
+    Polygon new_polygon;
+    Point16 p1;
+    Point16 p2;
+    tft.fillScreen( BACKGROUND_COLOR);
+    u_int32_t total_time = millis();
+    log_d("Draw start %i", total_time);
     for( MapBlock* mblock: memCache.blocks){
+        u_int32_t block_time = millis();
         if( !mblock->inView) continue;
 
         // block to draw
-        log_d("draw block %i %i", mblock, millis());
-        Point16 screen_center_mc = viewPort.center - mblock->offset;  // screen center with features coordinates
+        Point16 screen_center_mc = viewPort.center.toPoint16() - mblock->offset.toPoint16();  // screen center with features coordinates
         BBox screen_bbox_mc = viewPort.bbox - mblock->offset;  // screen boundaries with features coordinates
         
         ////// Polygons 
         for( Polygon polygon : mblock->polygons){
             if( zoom_level > polygon.maxzoom) continue;
-            Polygon new_polygon;
-            bool hit = false;
-            for( Point16 p : polygon.points){
-                if( screen_bbox_mc.contains_point( p)) hit = true;
+            if( !polygon.bbox.intersects( screen_bbox_mc)) continue;
+            new_polygon.color = polygon.color;
+            new_polygon.bbox.min.set( toScreenCoords( polygon.bbox.min, screen_center_mc));
+            new_polygon.bbox.max.set( toScreenCoords( polygon.bbox.max, screen_center_mc));
+            new_polygon.points.clear();
+            for( Point16 p : polygon.points){ // TODO: move to fill_polygon
                 new_polygon.points.push_back( toScreenCoords( p, screen_center_mc));
             }
-            if( hit){
-                new_polygon.color = polygon.color;
-                polygons_to_draw.push_back( new_polygon);
-            }
+            fill_polygon( new_polygon);
+            
         }
+        log_d("Block polygons done %i ms", millis()-block_time);
+        block_time = millis();
         
-        ////// Lines 
+        ////// Lines
         for( Polyline line : mblock->polylines){
-            Polyline new_line;
             if( zoom_level > line.maxzoom) continue;
-            new_line.color = line.color;
-            new_line.width = line.width;
-            bool prev_in_screen = false;
-            for( int i=0; i < (line.points.size()); i++) {
-                bool curr_in_screen = screen_bbox_mc.contains_point( line.points[i]);
-                if( !prev_in_screen && !curr_in_screen){  // TODO: clip, the segment could still intersect the screen area!
-                    prev_in_screen = false;
-                    continue;
-                    }
-                if( prev_in_screen && !curr_in_screen){  // split polyline: end and start new polyline. Driver does the clipping of the segment.
-                    new_line.points.push_back( toScreenCoords( line.points[i], screen_center_mc));  
-                    lines_to_draw.push_back( new_line);
-                    new_line.points.clear();
-                    prev_in_screen = false;
-                    continue;
+            if( !line.bbox.intersects( screen_bbox_mc)) continue;
+
+            for( int i=0; i < line.points.size() - 1; i++) {
+                if( !screen_bbox_mc.contains_point( line.points[i]) && !screen_bbox_mc.contains_point( line.points[i+1])){ 
+                    continue; // FIX: line could still cross view area
                 }
-                if( !prev_in_screen && curr_in_screen && i > 0){  // reenter screen.  Driver does the clipping
-                    new_line.points.push_back( toScreenCoords( line.points[i-1], screen_center_mc));
-                }
-                new_line.points.push_back( toScreenCoords( line.points[i], screen_center_mc));
-                prev_in_screen = curr_in_screen;
-            }
-            assert( new_line.points.size() != 1);
-            if( new_line.points.size() >= 2){
-                lines_to_draw.push_back( new_line);
+                p1 = toScreenCoords( line.points[i], screen_center_mc);
+                p2 = toScreenCoords( line.points[i+1], screen_center_mc);
+                tft.drawWideLine(
+                    p1.x, SCREEN_HEIGHT - p1.y,
+                    p2.x, SCREEN_HEIGHT - p2.y,
+                    line.width/zoom_level ?: 1, line.color, line.color);
             }
         }
-        tft.fillScreen( BACKGROUND_COLOR);
+        log_d("Block lines done %i ms", millis()-block_time);
     }
+    log_d("Total %i ms", millis()-total_time);
 
-    for( Polygon pol: polygons_to_draw){
-        fill_polygon( pol.points, pol.color);
-    }
-    for( Polyline line: lines_to_draw){
-        for( int i=0; i < (line.points.size() - 1); i++) {
-            if( line.points[i].x < 0 || line.points[i+1].x < 0 ||
-                line.points[i].x > SCREEN_WIDTH || line.points[i+1].x > SCREEN_WIDTH ||
-                line.points[i].y < 0 || line.points[i].y > SCREEN_HEIGHT ||
-                line.points[i+1].y < 0 || line.points[i+1].y > SCREEN_HEIGHT ){
-                    log_v("Error: point out of screen: %i, %i, %i, %i", line.points[i].x, line.points[i].y, line.points[i+1].x, line.points[i+1].y);
-                    // continue; // TODO: split line?
-                }
-            tft.drawWideLine(
-                line.points[i].x, SCREEN_HEIGHT - line.points[i].y,
-                line.points[i+1].x, SCREEN_HEIGHT - line.points[i+1].y,
-                line.width/zoom_level ?: 1, line.color, line.color);
-        }      
-    }
 
-    tft.fillTriangle( 
+    // TODO: paint only in NAV mode
+    tft.fillTriangle(
         SCREEN_WIDTH/2 - 4, SCREEN_HEIGHT/2 + 5, 
         SCREEN_WIDTH/2 + 4, SCREEN_HEIGHT/2 + 5, 
         SCREEN_WIDTH/2,     SCREEN_HEIGHT/2 - 6, 
@@ -153,7 +123,6 @@ void stats( ViewPort& viewPort, MapBlock& mblock)
 {
     Point32 screen_center_mc = viewPort.center - mblock.offset;  // screen center with features coordinates
     BBox screen_bbox_mc = viewPort.bbox - mblock.offset;  // screen boundaries with features coordinates
-    // BBox map_bbox_mc = mblock.bbox - mblock.offset;  // screen boundaries with features coordinates
 
     ////// Polygons 
     int in_screen = 0, in_map = 0,  points_total = 0;

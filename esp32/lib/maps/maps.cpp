@@ -40,7 +40,8 @@ bool init_sd_card()
     return true;
 }
 
-void parse_coords( ReadBufferingStream& file, std::vector<Point16>& points){
+void parse_coords( ReadBufferingStream& file, std::vector<Point16>& points)
+{
     char coord[20];
     int i, c;
     while(true){
@@ -54,9 +55,18 @@ void parse_coords( ReadBufferingStream& file, std::vector<Point16>& points){
         coord[i] = '\0';
         points.push_back( Point16( coord));
     }
-    points.shrink_to_fit();
+    // points.shrink_to_fit();
 }
 
+BBox parse_bbox(String str)
+{
+    char *next;
+    int32_t x1 = (int32_t )strtol( str.c_str(), &next, 10);
+    int32_t y1 = (int32_t )strtol( ++next, &next, 10);
+    int32_t x2 = (int32_t )strtol( ++next, &next, 10);
+    int32_t y2 = (int32_t )strtol( ++next, NULL, 10);
+    return BBox( Point32( x1, y1), Point32( x2, y2));
+}
 
 MapBlock* read_map_block( String file_name)
 {
@@ -72,59 +82,61 @@ MapBlock* read_map_block( String file_name)
     String feature_type = bufferedFile.readStringUntil(':');
     if( feature_type != "Polygons") log_e("Map error. Expected Polygons instead of: %s", feature_type);
     u_int32_t count = bufferedFile.readStringUntil('\n').toInt();
-    if( count <= 0){
-        header_msg("Error: wrong number of poligons: " + count);
-        while(true);
-    }
+    assert( count > 0);
+
     int line = 5;
     int total_points = 0;
     Polygon polygon;
     while( count > 0 && bufferedFile.available()){
-        polygon.color = std::stoul( bufferedFile.readStringUntil('\n').c_str(), nullptr, 16);
+        polygon.color = (u_int16_t )std::stoul( bufferedFile.readStringUntil('\n').c_str(), nullptr, 16);
         line++;
-        polygon.maxzoom = bufferedFile.readStringUntil('\n').toInt() ?: MAX_ZOOM;
+        polygon.maxzoom = (u_int8_t )bufferedFile.readStringUntil('\n').toInt() ?: MAX_ZOOM;
+        line++;
+
+        String tag = bufferedFile.readStringUntil(':');
+        assert( tag == "bbox");
+        polygon.bbox = parse_bbox( bufferedFile.readStringUntil('\n'));
         line++;
         polygon.points.clear();
+        tag = bufferedFile.readStringUntil(':');
+        assert( tag == "coords");
         parse_coords( bufferedFile, polygon.points);
         line++;
         mblock->polygons.push_back( polygon);
         total_points += polygon.points.size();
         count--;
     }
-    if( count != 0){
-        header_msg("ERROR: Polygons count don't match");
-        while(true);
-    }
-    mblock->polygons.shrink_to_fit();
-
+    assert( count == 0);
+    
     // read lines
     feature_type = bufferedFile.readStringUntil(':');
     if( feature_type != "Polylines") log_e("Map error. Expected Polylines instead of: %s", feature_type);
     count = bufferedFile.readStringUntil('\n').toInt();
-    if( count <= 0){
-        header_msg("Error: wrong number of lines: " + count);
-        while(true);
-    }
+    assert( count > 0);
+
     Polyline polyline;
     while( count > 0 && bufferedFile.available()){
-        polyline.color = std::stoul( bufferedFile.readStringUntil('\n').c_str(), nullptr, 16);
+        polyline.color = (u_int16_t )std::stoul( bufferedFile.readStringUntil('\n').c_str(), nullptr, 16);
         line++;
-        polyline.width = bufferedFile.readStringUntil('\n').toInt() ?: 1;
+        polyline.width = (u_int8_t )bufferedFile.readStringUntil('\n').toInt() ?: 1;
         line++;
-        polyline.maxzoom = bufferedFile.readStringUntil('\n').toInt() ?: MAX_ZOOM;
+        polyline.maxzoom = (u_int8_t )bufferedFile.readStringUntil('\n').toInt() ?: MAX_ZOOM;
+        line++;
+
+        String tag = bufferedFile.readStringUntil(':');
+        assert( tag == "bbox");
+        polyline.bbox = parse_bbox( bufferedFile.readStringUntil('\n'));
         line++;
         polyline.points.clear();
+        tag = bufferedFile.readStringUntil(':');
+        assert( tag == "coords");
         parse_coords( bufferedFile, polyline.points);
         line++;
         mblock->polylines.push_back( polyline);
         total_points += polyline.points.size();
         count--;
     }
-    if( count != 0){
-        header_msg("ERROR: Lines count don't match");
-        while(true);
-    }
-    mblock->polylines.shrink_to_fit();
+    assert( count == 0);
     file.close();
     return mblock;
 }
@@ -139,8 +151,8 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
     // loop the 4 corners of the bbox and find the files that contain them
     for( Point32 point: { bbox.min, bbox.max, Point32( bbox.min.x, bbox.max.y), Point32( bbox.max.x, bbox.min.y) }){
         bool found = false;
-        int32_t block_min_x = point.x & ( ~mapblock_mask);
-        int32_t block_min_y = point.y & ( ~mapblock_mask);
+        int32_t block_min_x = point.x & ( ~MAPBLOCK_MASK);
+        int32_t block_min_y = point.y & ( ~MAPBLOCK_MASK);
         
         // check if the needed block is already in memory
         for( MapBlock* memblock : memCache.blocks){
@@ -152,10 +164,10 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
         }
         if( found) continue;
         
-        log_v("load from disk %i", millis());
+        log_d("load from disk (%i, %i) %i", block_min_x, block_min_y, millis());
         // block is not in memory => load from disk
-        int32_t block_x = (block_min_x >> MAPBLOCK_SIZE_BITS) & mapfolder_mask;
-        int32_t block_y = (block_min_y >> MAPBLOCK_SIZE_BITS) & mapfolder_mask;
+        int32_t block_x = (block_min_x >> MAPBLOCK_SIZE_BITS) & MAPFOLDER_MASK;
+        int32_t block_y = (block_min_y >> MAPBLOCK_SIZE_BITS) & MAPFOLDER_MASK;
         int32_t folder_name_x = block_min_x >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
         int32_t folder_name_y = block_min_y >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
         String file_name = base_folder + folder_name_x +"_"+ folder_name_y +"/"+ block_x +"_"+ block_y; //  /maps/123_456/777_888
@@ -164,7 +176,8 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
         if( memCache.blocks.size() >= MAPBLOCKS_MAX){
             // remove first one, the oldest
             log_v("Deleteing freeHeap: %i", esp_get_free_heap_size());
-            delete memCache.blocks.front(); // free memory
+            MapBlock* first_block = memCache.blocks.front();
+            delete first_block; // free memory
             memCache.blocks.erase( memCache.blocks.begin()); // remove pointer from the vector
             log_v("Deleted freeHeap: %i", esp_get_free_heap_size());
         }
