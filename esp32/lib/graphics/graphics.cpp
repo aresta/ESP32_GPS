@@ -13,39 +13,11 @@ void ViewPort::setCenter(Point32& pcenter) {
     bbox.max.y = pcenter.y + SCREEN_HEIGHT * zoom_level / 2;
 }
 
-Point16 toScreenCoords( Point32 p, Point32 screen_center)
+int16_t toScreenCoord( const int32_t pxy, const int32_t screen_centerxy) // work with primitives for performance
 {
-    return Point16(
-        ((p.x - screen_center.x) / zoom_level) + SCREEN_WIDTH / 2,
-        ((p.y - screen_center.y) / zoom_level) + SCREEN_HEIGHT/ 2
-    );
+    return round((double )(pxy - screen_centerxy) / zoom_level) + (double )SCREEN_WIDTH / 2;
 }
 
-
-std::vector<Point16> clip_polygon( BBox& bbox, std::vector<Point16>& points)
-{
-    std::vector<Point16> clipped;
-    int16_t dx, dy, bbpx;
-    for( int i=0; i < (points.size() - 1); i++){
-        Point16 p1 = points[i];
-        Point16 p2 = points[i+1];
-        // cut vert left side
-        if( p1.x < bbox.min.x && p2.x > bbox.min.x) {
-            dx = p2.x - p1.x;
-            dy = abs( p2.y - p1.y);
-            bbpx = bbox.min.x - p1.x;
-            assert( dx > 0); assert( dy > 0); assert( bbpx > 0);
-            p1.y = double(bbpx * dy) / dx;
-            p1.x = bbox.min.x;
-        }
-
-        if( p1.x > bbox.min.x && p2.x < bbox.min.x) {
-
-        }
-
-    }
-    return clipped;
-}
 
 Point16::Point16( char *coords_pair)
 {
@@ -54,13 +26,14 @@ Point16::Point16( char *coords_pair)
     y = (int16_t )round( strtod( ++next, NULL));  // 2nd coord
 }
 
-bool BBox::contains_point(const Point32 p){ return p.x > min.x && p.x < max.x && p.y > min.y && p.y < max.y; }
+bool BBox::contains_point(const Point32 p){ return p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y; }
 
-bool BBox::intersects( BBox b){ return 
-    b.contains_point( max) || b.contains_point( min) ||
-    b.contains_point( Point16(min.x, max.y)) || b.contains_point( Point16(max.x, min.y)) ||
-    contains_point( b.min) || contains_point( b.max) ||
-    contains_point( Point16( b.min.x, b.max.y)) || contains_point( Point16(b.max.x, b.min.y));
+bool BBox::intersects( BBox b){ 
+    if( b.min.x > max.x || 
+        b.max.x < min.x || 
+        b.min.y > max.y || 
+        b.max.y < min.y) return false;
+        return true;
     }
 
 void header_msg( String msg)

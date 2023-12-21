@@ -26,10 +26,10 @@ struct MapBlock {
 /// @brief MapBlocks stored in memory
 struct MemCache {
     std::vector<MapBlock* > blocks;
-    // u_int32_t total_polylines = 0;
-    // u_int32_t total_polygons = 0;
-    // u_int32_t total_inview_polylines = 0;
-    // u_int32_t total_inview_polygons = 0;
+    // uint32_t total_polylines = 0;
+    // uint32_t total_polygons = 0;
+    // uint32_t total_inview_polylines = 0;
+    // uint32_t total_inview_polygons = 0;
 };
 
 bool init_sd_card();

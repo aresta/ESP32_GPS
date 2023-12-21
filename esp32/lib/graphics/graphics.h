@@ -47,7 +47,6 @@ struct Point32 {
     Point32 operator+(const Point32 p){ return Point32( x+p.x, y+p.y);};
     Point16 toPoint16(){ return Point16( x, y);}; // TODO: check limits
     bool operator==(const Point32 p){ return x==p.x && y==p.y; };
-    void set( Point32 p){ x=p.x; y=p.y;};
 
     /// @brief Parse char array with the coordinates
     /// @param coords_pair char array like:  11.222,333.44
@@ -111,8 +110,8 @@ struct ViewPort {
 struct MemCache;
 struct MapBlock;
 void draw( ViewPort& viewPort, MemCache& memCache);
-Point16 toScreenCoords( Point32 p, Point32 screen_center);
-std::vector<Point16> clip_polygon( BBox& bbox, std::vector<Point16>&  points);
+int16_t toScreenCoord( const int32_t pxy, const int32_t screen_centerxy);
+// std::vector<Point16> clip_polygon( BBox& bbox, std::vector<Point16>&  points);
 void stats( ViewPort& viewPort, MapBlock& mblock);
 void header_msg( String msg);
 

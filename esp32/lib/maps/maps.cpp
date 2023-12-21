@@ -1,6 +1,6 @@
-#include <Arduino.h>
-#include <SPI.h>
-#include <SD.h>
+#include "FS.h"
+#include "SD.h"
+#include "SPI.h"
 #include <StreamUtils.h>
 #include <string>
 #include "graphics.h"
@@ -40,67 +40,134 @@ bool init_sd_card()
     return true;
 }
 
+// @brief Returns the int16 or 0 if empty
+int16_t parse_int16( ReadBufferingStream& file)
+{
+    char num[16];
+    uint8_t i;
+    char c;
+    i=0;
+    c = (char )file.read();
+    if( c == '\n') return 0;
+    while( c>='0' && c <= '9'){
+        assert( i < 15);
+        num[i++] = c;
+        c = (char )file.read();
+    }
+    num[i] = '\0';
+    if( c != ';' && c != ',' && c != '\n'){
+        log_e("parse_int16 error: %c %i", c, c);
+        log_e("Num: [%s]", num);
+        while(1);
+    }
+    try{
+        return std::stoi( num);
+    } catch( std::invalid_argument){
+        log_e("parse_int16 invalid_argument: [%c] [%s]", c, num);
+    } catch( std::out_of_range){
+        log_e("parse_int16 out_of_range: [%c] [%s]", c, num);
+    }
+    return -1;
+}
+
+// @brief Returns the string until terminator char or newline. The terminator character is not included but comsumed from stream.
+void parse_str_until( ReadBufferingStream& file, char terminator, char *str)
+{
+    uint8_t i;
+    char c;
+    i=0;
+    c = (char )file.read();  
+    while( c != terminator && c != '\n'){
+        assert( i < 29);
+        str[i++] = c;
+        c = (char )file.read();
+    }
+    str[i] = '\0';
+}
+
 void parse_coords( ReadBufferingStream& file, std::vector<Point16>& points)
 {
-    char coord[20];
-    int i, c;
-    while(true){
-        i = 0;
-        c = file.read();
-        if( c == '\n') break;
-        while(c >= 0 && c != ';' && i < 20) {
-            coord[i++] = (char )c;
-            c = file.read();
+    char str[30];
+    assert(points.size() == 0);
+    Point16 point;
+    while( true){
+        try{
+            parse_str_until( file, ',', str);
+            if( str[0] == '\0') break;
+            point.x = (int16_t )std::stoi( str);
+            parse_str_until( file, ';', str);
+            assert( str[0] != '\0');
+            point.y = (int16_t )std::stoi( str);
+            // log_d("point: %i %i", point.x, point.y);
+        } catch( std::invalid_argument){
+            log_e("parse_coords invalid_argument: %s", str);
+        } catch( std::out_of_range){
+            log_e("parse_coords out_of_range: %s", str);
         }
-        coord[i] = '\0';
-        points.push_back( Point16( coord));
+        points.push_back( point);
     }
     // points.shrink_to_fit();
 }
 
-BBox parse_bbox(String str)
-{
-    char *next;
-    int32_t x1 = (int32_t )strtol( str.c_str(), &next, 10);
-    int32_t y1 = (int32_t )strtol( ++next, &next, 10);
-    int32_t x2 = (int32_t )strtol( ++next, &next, 10);
-    int32_t y2 = (int32_t )strtol( ++next, NULL, 10);
-    return BBox( Point32( x1, y1), Point32( x2, y2));
-}
-
 MapBlock* read_map_block( String file_name)
 {
+    log_d("read_map_block: %s", file_name.c_str());
+    char c;
+    char str[30];
     MapBlock* mblock = new MapBlock();
-    File file = SD.open( file_name + ".fmp");
-    if( !file){
+    fs::File file_ = SD.open( file_name + ".fmp");
+    if( !file_){
         header_msg("Map file not found in folder: " + base_folder);
         while(true);
     }
-    ReadBufferingStream bufferedFile{ file, 1000};
+    ReadBufferingStream file{ file_, 2000};
+    uint32_t line = 0;
 
     // read polygons
-    String feature_type = bufferedFile.readStringUntil(':');
-    if( feature_type != "Polygons") log_e("Map error. Expected Polygons instead of: %s", feature_type);
-    u_int32_t count = bufferedFile.readStringUntil('\n').toInt();
+    parse_str_until( file, ':', str);
+    if( strcmp( str, "Polygons") != 0) {
+        log_e("Map error. Expected Polygons instead of: %s", str);
+        while(0);
+    }
+    int16_t count = parse_int16( file);
     assert( count > 0);
+    line++;
+    log_d("count: %i", count);
 
-    int line = 5;
-    int total_points = 0;
+    uint32_t total_points = 0;
     Polygon polygon;
-    while( count > 0 && bufferedFile.available()){
-        polygon.color = (u_int16_t )std::stoul( bufferedFile.readStringUntil('\n').c_str(), nullptr, 16);
+    Point16 p;
+    int16_t maxzoom;
+    while( count > 0){
+        // log_d("line: %i", line);
+        parse_str_until( file, '\n', str); // color
+        assert( str[0] == '0' && str[1] == 'x');
+        polygon.color = (uint16_t )std::stoul( str, nullptr, 16);
+        // log_d("polygon.color: %i", polygon.color);
         line++;
-        polygon.maxzoom = (u_int8_t )bufferedFile.readStringUntil('\n').toInt() ?: MAX_ZOOM;
+        parse_str_until( file, '\n', str); // maxzoom
+        polygon.maxzoom = str[0] ? (uint8_t )std::stoi( str) : MAX_ZOOM;
+        // log_d("polygon.maxzoom: %i", polygon.maxzoom);
         line++;
 
-        String tag = bufferedFile.readStringUntil(':');
-        assert( tag == "bbox");
-        polygon.bbox = parse_bbox( bufferedFile.readStringUntil('\n'));
+        parse_str_until( file, ':', str);
+        if( strcmp( str, "bbox") != 0){
+            log_e("bbox error tag. Line %i : %s", line, str);
+            while(true);
+        }
+        polygon.bbox.min.x = parse_int16( file);
+        polygon.bbox.min.y = parse_int16( file);
+        polygon.bbox.max.x = parse_int16( file);
+        polygon.bbox.max.y = parse_int16( file);
+
         line++;
         polygon.points.clear();
-        tag = bufferedFile.readStringUntil(':');
-        assert( tag == "coords");
-        parse_coords( bufferedFile, polygon.points);
+        parse_str_until( file, ':', str);
+        if( strcmp( str, "coords") != 0){
+            log_e("coords error tag. Line %i : %s", line, str);
+            while(true);
+        }
+        parse_coords( file, polygon.points);
         line++;
         mblock->polygons.push_back( polygon);
         total_points += polygon.points.size();
@@ -109,35 +176,62 @@ MapBlock* read_map_block( String file_name)
     assert( count == 0);
     
     // read lines
-    feature_type = bufferedFile.readStringUntil(':');
-    if( feature_type != "Polylines") log_e("Map error. Expected Polylines instead of: %s", feature_type);
-    count = bufferedFile.readStringUntil('\n').toInt();
+    parse_str_until( file, ':', str);
+    if( strcmp( str, "Polylines") != 0) log_e("Map error. Expected Polylines instead of: %s", str);
+    count = parse_int16( file);
     assert( count > 0);
-
+    line++;
+    log_d("count: %i", count);
+    
     Polyline polyline;
-    while( count > 0 && bufferedFile.available()){
-        polyline.color = (u_int16_t )std::stoul( bufferedFile.readStringUntil('\n').c_str(), nullptr, 16);
+    while( count > 0){
+        // log_d("line: %i", line);
+        parse_str_until( file, '\n', str); // color
+        assert( str[0] == '0' && str[1] == 'x');
+        polyline.color = (uint16_t )std::stoul( str, nullptr, 16);
         line++;
-        polyline.width = (u_int8_t )bufferedFile.readStringUntil('\n').toInt() ?: 1;
+        parse_str_until( file, '\n', str); // width
+        polyline.width = str[0] ? (uint8_t )std::stoi( str) : 1;
         line++;
-        polyline.maxzoom = (u_int8_t )bufferedFile.readStringUntil('\n').toInt() ?: MAX_ZOOM;
+        parse_str_until( file, '\n', str); // maxzoom
+        polyline.maxzoom = str[0] ? (uint8_t )std::stoi( str) : MAX_ZOOM;
         line++;
 
-        String tag = bufferedFile.readStringUntil(':');
-        assert( tag == "bbox");
-        polyline.bbox = parse_bbox( bufferedFile.readStringUntil('\n'));
+        parse_str_until( file, ':', str);
+        if( strcmp( str, "bbox") != 0){
+            log_e("bbox error tag. Line %i : %s", line, str);
+            while(true);
+        }
+
+        polyline.bbox.min.x = parse_int16( file);
+        polyline.bbox.min.y = parse_int16( file);
+        polyline.bbox.max.x = parse_int16( file);
+        polyline.bbox.max.y = parse_int16( file);
+
+        // if( line > 4050){
+        //     log_e("polyline.bbox %i %i %i %i", polyline.bbox.min.x, polyline.bbox.min.y,polyline.bbox.max.x, polyline.bbox.max.y);
+        // }
         line++;
+
         polyline.points.clear();
-        tag = bufferedFile.readStringUntil(':');
-        assert( tag == "coords");
-        parse_coords( bufferedFile, polyline.points);
+        parse_str_until( file, ':', str);
+        if( strcmp( str, "coords") != 0){
+            log_d("coords tag. Line %i : %s", line, str);
+            while(true);
+        }
+        parse_coords( file, polyline.points);
         line++;
+        // if( line > 4050 && file_name == "/mymap/3_77/6_9"){
+        //     for( Point16 p: polyline.points){
+        //         log_d("p.x, p.y %i %i", p.x, p.y);
+        //     }
+        // }
         mblock->polylines.push_back( polyline);
         total_points += polyline.points.size();
         count--;
     }
     assert( count == 0);
-    file.close();
+    file_.close();
     return mblock;
 }
 
@@ -170,7 +264,9 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
         int32_t block_y = (block_min_y >> MAPBLOCK_SIZE_BITS) & MAPFOLDER_MASK;
         int32_t folder_name_x = block_min_x >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
         int32_t folder_name_y = block_min_y >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
-        String file_name = base_folder + folder_name_x +"_"+ folder_name_y +"/"+ block_x +"_"+ block_y; //  /maps/123_456/777_888
+        char folder_name[12];
+        snprintf( folder_name, 9, "%+04d%+04d", folder_name_x, folder_name_y); // force sign and 4 chars per number
+        String file_name = base_folder + folder_name +"/"+ block_x +"_"+ block_y; //  /maps/123_456/777_888
 
         // check if cache is full
         if( memCache.blocks.size() >= MAPBLOCKS_MAX){
