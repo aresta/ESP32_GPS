@@ -11,7 +11,7 @@ const String base_folder = "/mymap/"; // TODO: folder selection
 
 bool init_sd_card()
 {
-    if (!SD.begin(13)) {
+    if (!SD.begin( SD_CS_PIN)) {
         Serial.println("Card Mount Failed");
         return false;
     }
