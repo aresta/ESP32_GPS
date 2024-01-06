@@ -4,6 +4,7 @@
 #include "gps.h"
 #include "graphics.h"
 #include "../lib/conf.h"
+#include "env.h"
 
 TFT_eSPI tft = TFT_eSPI();
 HardwareSerial SerialGPS(2);
@@ -83,11 +84,7 @@ void setup()
         }
     tft.println("Reading map...");
 
-    // Point32 map_center( -530000, 5340000); // picos
-   
-    Point32 map_center( 224672.31, 5107378.91); // La Mola
-    // Point32 map_center( 235664.91, 5074788.07); // Tibidabo
-    // Point32 map_center( 244808.69, 5070020.31); // bcn
+    Point32 map_center( INIT_POS);
     // TODO: keep and show last position
     viewPort.setCenter( map_center);
     get_map_blocks( viewPort.bbox, memCache );
