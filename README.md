@@ -1,6 +1,6 @@
 # ESP32_GPS
 
-The goal is to build a portable GPS device that displays a map with your position in a small display. The map data is extracted from the OpenStreetMap data project and reduced to only the basic elements for a clear navigation, e.g. while mountaing biking.  The script extracts basically polylines and polygons to display the roads, paths, rivers, buildings, forest, etc.
+The goal is to build a portable GPS device that displays a map with your position in a small display. The map data is extracted from the OpenStreetMap project data and reduced to only the basic elements for a clear navigation, e.g. while mountain biking.  The scripts extracts basically polylines and polygons to display the roads, paths, rivers, buildings, forest, etc.
 
 To download and extract the map files of your country/area see: https://github.com/aresta/OSM_Extract. It is still work in progress, but it's already funtional. Once you extract and generate the map files copy them into the SD card and put the SD card in the device.
 
@@ -32,19 +32,19 @@ I will share the kicad project also.
 
 
 The wiring for the basic prototype:
-![GPS ESP32](/img/esp32_gps_wiring.jpg)
+![GPS ESP32](/img/esp32-s3-wiring.jpg)
 
 
 
-The MCU should be the ESP32-S3 with 4MB or 8MB or PSRAM (or Wrover) to have enough memory for the maps data to display. The pins could be in different positions, just pay attention to the GPIO numbers.
+The MCU should be the ESP32-S3 with 4MB or 8MB or PSRAM (or Wrover) to have enough memory for the maps data to display.
 
-I plan also a version with a small round display in a compact form. The system works with any display size.
+I plan also a version with a small round display in a compact form. The system should work with any display size.
 
 The prototype is already functional. It's shows your position in the map with the little triangle, it refresh as you move and with the joystick you can move around in the screen, zoom in and out. 
 
 The map is created out of an Openstreetmap PBF extract and clipped to the desired area and put the generated map files in the SD card. Storage space is not a problem, so you can have a quite big area of hundreds of kms. The map file creation is done in the computer with some scripts and then copied to the SD card. See project: https://github.com/aresta/OSM_Extract
 
-The map files creation and displaying the elements is already working but there is still work to do. Also in the user interface and the rest of the software.
+The map files creation, the rendering of the elements and the GPS position work fine but there is still work to do. The user interface is still very basic.
 
 Any help is welcome!
 
