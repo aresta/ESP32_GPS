@@ -7,7 +7,7 @@
 #include "env.h"
 
 TFT_eSPI tft = TFT_eSPI();
-HardwareSerial SerialGPS(2);
+HardwareSerial SerialGPS(1);
 ViewPort viewPort;
 MemCache memCache;
 int zoom_level = PIXEL_SIZE_DEF; // zoom_level = 1 correspond aprox to 1 meter / pixel
@@ -62,11 +62,10 @@ void setup()
     Serial.begin(115200);
     // printFreeMem();
 #ifdef ARDUINO_uPesy_WROVER
-    // SerialGPS.begin(9600, SERIAL_8N1, 26, 27);  // rx=gpio26, tx=gpio27 (Wrover)
 #else   
-    SerialGPS.begin(9600, SERIAL_8N1, 16, 17);  // other boards with rx=gpio16, tx=gpio17
+    SerialGPS.begin(9600, SERIAL_8N1, GPS_TX, GPS_RX);
 #endif
-    digitalWrite( SD_CS, HIGH); // SD card chips select
+    digitalWrite( SD_CS_PIN, HIGH); // SD card chips select
     digitalWrite( TFT_CS, HIGH); // TFT chip select
 
     tft.init();

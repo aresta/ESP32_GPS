@@ -10,19 +10,22 @@
 extern int zoom_level;
 
 // Buttons GPIO nums
-#define UP_BUTTON 25
-#define DOWN_BUTTON 33
-#define LEFT_BUTTON 34
-#define RIGHT_BUTTON 35
-// #define LEFT_BUTTON 14
-// #define RIGHT_BUTTON 12
-#define SELECT_BUTTON 22
-#define TFT_OFF_BUTTON 32
+#define UP_BUTTON 03
+#define DOWN_BUTTON 04
+#define LEFT_BUTTON 15
+#define RIGHT_BUTTON 16
+#define SELECT_BUTTON 07
+#define TFT_OFF_BUTTON 05
 #define TFT_BLK_PIN 21
-#define TFT_CS 15
-#define SD_CS 13
-#define GPS_CE 14
+#define TFT_CS 10
 #define MENU_BUTTON 5
+
+#define SD_MISO_PIN 13
+#define SD_CS_PIN 14
+
+#define GPS_RX 17
+#define GPS_TX 18
+// #define GPS_CE 14
 
 #define DEVMODE_NAV 1
 #define DEVMODE_MOVE 2
