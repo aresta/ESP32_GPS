@@ -59,7 +59,7 @@ Todo's:
 
 
 ---
-The excellent map data is available thanks to the great OpenStreetMap project and contributors. The maps data is available under the Open Database License.
+The excellent map data is available thanks to the great OpenStreetMap project and contributors. The map data is available under the Open Database License.
 
 © OpenStreetMap contributors
 
