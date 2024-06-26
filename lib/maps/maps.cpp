@@ -1,47 +1,16 @@
-#include "FS.h"
-#include "SD.h"
-#include "SPI.h"
-#include <StreamUtils.h>
+#include <Arduino.h>
 #include <string>
-#include "graphics.h"
-#include "maps.h"
+
+#include <log.h>
+#include <files.h>
+#include <graphics.h>
+//#include <draw.h>
 #include "../conf.h"
 
-const String base_folder = "/mymap/"; // TODO: folder selection
-
-bool init_sd_card()
-{
-    if (!SD.begin( SD_CS_PIN)) {
-        Serial.println("Card Mount Failed");
-        return false;
-    }
-    uint8_t cardType = SD.cardType();
-    
-    if (cardType == CARD_NONE) {
-        Serial.println("No SD card attached");
-        header_msg("No SD card attached");
-        return false;
-    }
-    
-    Serial.print("SD Card Type: ");
-    if (cardType == CARD_MMC) {
-        Serial.println("MMC");
-    } else if (cardType == CARD_SD) {
-        Serial.println("SDSC");
-    } else if (cardType == CARD_SDHC) {
-        Serial.println("SDHC");
-    } else {
-        Serial.println("UNKNOWN");
-    }
-
-    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-    Serial.printf("SD Card Size: %lluMB\n", cardSize);   
-    Serial.println("initialisation done.");
-    return true;
-}
+#include "maps.h"
 
 // @brief Returns the int16 or 0 if empty
-int16_t parse_int16( ReadBufferingStream& file)
+int16_t parse_int16(IReadStream& file)
 {
     char num[16];
     uint8_t i;
@@ -71,7 +40,7 @@ int16_t parse_int16( ReadBufferingStream& file)
 }
 
 // @brief Returns the string until terminator char or newline. The terminator character is not included but comsumed from stream.
-void parse_str_until( ReadBufferingStream& file, char terminator, char *str)
+void parse_str_until(IReadStream& file, char terminator, char *str)
 {
     uint8_t i;
     char c;
@@ -85,7 +54,7 @@ void parse_str_until( ReadBufferingStream& file, char terminator, char *str)
     str[i] = '\0';
 }
 
-void parse_coords( ReadBufferingStream& file, std::vector<Point16>& points)
+void parse_coords(IReadStream& file, std::vector<Point16>& points)
 {
     char str[30];
     assert(points.size() == 0);
@@ -109,28 +78,22 @@ void parse_coords( ReadBufferingStream& file, std::vector<Point16>& points)
     // points.shrink_to_fit();
 }
 
-MapBlock* read_map_block( String file_name)
-{
-    log_d("read_map_block: %s", file_name.c_str());
+void read_map_block(IReadStream& file, MapBlock* result)
+{ 
     char c;
     char str[30];
-    MapBlock* mblock = new MapBlock();
-    fs::File file_ = SD.open( file_name + ".fmp");
-    if( !file_){
-        header_msg("Map file not found in folder: " + base_folder);
-        while(true);
-    }
-    ReadBufferingStream file{ file_, 2000};
     uint32_t line = 0;
 
     // read polygons
-    parse_str_until( file, ':', str);
-    if( strcmp( str, "Polygons") != 0) {
+    parse_str_until(file, ':', str);
+
+    if (strcmp( str, "Polygons") != 0) {
         log_e("Map error. Expected Polygons instead of: %s", str);
         while(0);
     }
+
     int16_t count = parse_int16( file);
-    assert( count > 0);
+    assert(count > 0);
     line++;
     log_d("count: %i", count);
 
@@ -138,7 +101,8 @@ MapBlock* read_map_block( String file_name)
     Polygon polygon;
     Point16 p;
     int16_t maxzoom;
-    while( count > 0){
+    
+    while (count > 0) {
         // log_d("line: %i", line);
         parse_str_until( file, '\n', str); // color
         assert( str[0] == '0' && str[1] == 'x');
@@ -151,10 +115,12 @@ MapBlock* read_map_block( String file_name)
         line++;
 
         parse_str_until( file, ':', str);
-        if( strcmp( str, "bbox") != 0){
+
+        if (strcmp( str, "bbox") != 0){
             log_e("bbox error tag. Line %i : %s", line, str);
             while(true);
         }
+
         polygon.bbox.min.x = parse_int16( file);
         polygon.bbox.min.y = parse_int16( file);
         polygon.bbox.max.x = parse_int16( file);
@@ -169,7 +135,7 @@ MapBlock* read_map_block( String file_name)
         }
         parse_coords( file, polygon.points);
         line++;
-        mblock->polygons.push_back( polygon);
+        result->polygons.push_back( polygon);
         total_points += polygon.points.size();
         count--;
     }
@@ -177,14 +143,17 @@ MapBlock* read_map_block( String file_name)
     
     // read lines
     parse_str_until( file, ':', str);
-    if( strcmp( str, "Polylines") != 0) log_e("Map error. Expected Polylines instead of: %s", str);
+
+    if( strcmp( str, "Polylines") != 0) 
+        log_e("Map error. Expected Polylines instead of: %s", str);
+
     count = parse_int16( file);
     assert( count > 0);
     line++;
     log_d("count: %i", count);
     
     Polyline polyline;
-    while( count > 0){
+    while (count > 0) {
         // log_d("line: %i", line);
         parse_str_until( file, '\n', str); // color
         assert( str[0] == '0' && str[1] == 'x');
@@ -226,37 +195,41 @@ MapBlock* read_map_block( String file_name)
         //         log_d("p.x, p.y %i %i", p.x, p.y);
         //     }
         // }
-        mblock->polylines.push_back( polyline);
+        result->polylines.push_back(polyline);
         total_points += polyline.points.size();
         count--;
     }
-    assert( count == 0);
-    file_.close();
-    return mblock;
+    assert(count == 0);
 }
 
-
-void get_map_blocks( BBox& bbox, MemCache& memCache)
+void get_map_blocks(const IFileSystem* fileSystem, BBox& bbox, MemCache& memCache)
 {
     log_d("get_map_blocks %i", millis());
-    for( MapBlock* block: memCache.blocks){
+
+    for (MapBlock* block: memCache.blocks){
         block->inView = false;
     }
+
     // loop the 4 corners of the bbox and find the files that contain them
-    for( Point32 point: { bbox.min, bbox.max, Point32( bbox.min.x, bbox.max.y), Point32( bbox.max.x, bbox.min.y) }){
+    for (Point32 point : { bbox.min, bbox.max, Point32(bbox.min.x, bbox.max.y), Point32( bbox.max.x, bbox.min.y) })
+    {
         bool found = false;
         int32_t block_min_x = point.x & ( ~MAPBLOCK_MASK);
         int32_t block_min_y = point.y & ( ~MAPBLOCK_MASK);
         
         // check if the needed block is already in memory
-        for( MapBlock* memblock : memCache.blocks){
+        for (MapBlock* memblock : memCache.blocks){
             if( block_min_x == memblock->offset.x && block_min_y == memblock->offset.y){
                 memblock->inView = true;
                 found = true;
                 break;
             }
         }
-        if( found) continue;
+
+        if (found) 
+        {
+            continue;
+        }
         
         log_d("load from disk (%i, %i) %i", block_min_x, block_min_y, millis());
         // block is not in memory => load from disk
@@ -266,10 +239,14 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
         int32_t folder_name_y = block_min_y >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
         char folder_name[12];
         snprintf( folder_name, 9, "%+04d%+04d", folder_name_x, folder_name_y); // force sign and 4 chars per number
-        String file_name = base_folder + folder_name +"/"+ block_x +"_"+ block_y; //  /maps/123_456/777_888
+
+        char file_name[100];
+        snprintf(file_name, sizeof(file_name), "%s/%d/%d.fmp", folder_name, block_x, block_y);
+        //String file_name = String("") + folder_name + "/" + block_x + "_" + block_y + ".fmp"; //  /maps/123_456/777_888
 
         // check if cache is full
-        if( memCache.blocks.size() >= MAPBLOCKS_MAX){
+        if (memCache.blocks.size() >= MAPBLOCKS_MAX)
+        {
             // remove first one, the oldest
             log_v("Deleteing freeHeap: %i", esp_get_free_heap_size());
             MapBlock* first_block = memCache.blocks.front();
@@ -278,17 +255,28 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
             log_v("Deleted freeHeap: %i", esp_get_free_heap_size());
         }
 
-        MapBlock* new_block = read_map_block( file_name);
+        auto new_block = new MapBlock();
+        auto stream = fileSystem->Open(file_name);
+
+        if (!stream) {
+            snprintf(file_name, sizeof(file_name), "Map file not found: %s/%d/%d.fmp", folder_name, block_x, block_y);
+            header_msg(file_name);
+            while(true);
+        }
+
+        read_map_block(*stream, new_block);
+
+        delete stream;
+
         new_block->inView = true;
         new_block->offset = Point32( block_min_x, block_min_y);
         memCache.blocks.push_back( new_block); // add the block to the memory cache
-        assert( memCache.blocks.size() <= MAPBLOCKS_MAX);
+
+        assert(memCache.blocks.size() <= MAPBLOCKS_MAX);
 
         log_d("Block readed from SD card: %p", new_block);
         log_d("FreeHeap: %i", esp_get_free_heap_size());
-    
     }   
+
     log_d("memCache size: %i %i", memCache.blocks.size(), millis());
 }
-
-

@@ -1,17 +1,30 @@
 #include <Arduino.h>
-#include <TFT_eSPI.h> 
+#include <TFT_eSPI.h>
+#include "colors.h"
+#include <log.h>
+#include "files.h"
+#include "graphics.h"
 #include "maps.h"
 #include "gps.h"
-#include "graphics.h"
+#include "draw.h"
+
 #include "../lib/conf.h"
-#include "env.h"
+#include "env_example.h"
 
 TFT_eSPI tft = TFT_eSPI();
 HardwareSerial SerialGPS(1);
-ViewPort viewPort;
+
+Point32 map_center(INIT_POS);
 MemCache memCache;
+
+const char* base_folder = "/mymap/"; // TODO: folder selection
+
 int zoom_level = PIXEL_SIZE_DEF; // zoom_level = 1 correspond aprox to 1 meter / pixel
 int mode = DEVMODE_NAV;
+
+ViewPort viewPort(map_center, zoom_level, TFT_WIDTH, TFT_HEIGHT);
+
+const IFileSystem* fileSystem = get_file_system(base_folder);
 
 void tft_header( Coord& pos)
 {
@@ -47,7 +60,6 @@ void printFreeMem()
 
 void setup()
 {
-    // Configure GPIO's
     pinMode( UP_BUTTON, INPUT_PULLUP);
     pinMode( DOWN_BUTTON, INPUT_PULLUP);
     pinMode( LEFT_BUTTON, INPUT_PULLUP);
@@ -77,16 +89,16 @@ void setup()
     tft.setCursor(5,5,4);
     tft.println("Initializing...");
     digitalWrite( TFT_BLK_PIN, HIGH);
-    if(!init_sd_card()) {
+    if(!init_file_system()) {
         tft.println("Error: SD Card Mount Failed!");
         while(true);
-        }
+    }
     tft.println("Reading map...");
 
     Point32 map_center( INIT_POS);
     // TODO: keep and show last position
     viewPort.setCenter( map_center);
-    get_map_blocks( viewPort.bbox, memCache );
+    get_map_blocks(fileSystem, viewPort.bbox, memCache );
     draw( viewPort, memCache);
     tft_msg("Waiting for satellites...");
     // stats(viewPort, mmap);
@@ -165,7 +177,7 @@ void loop()
 
     if( moved) {
         viewPort.setCenter( p);
-        get_map_blocks( viewPort.bbox, memCache);
+        get_map_blocks(fileSystem, viewPort.bbox, memCache);
         draw( viewPort, memCache);
         tft_header( coord);
         tft_footer( String(zoom_level));

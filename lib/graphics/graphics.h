@@ -1,56 +1,74 @@
-#ifndef graphics_h_
-#define graphics_h_
-#include <Arduino.h>
-#include <TFT_eSPI.h>
-#include <stdint.h>
+#pragma once
+
+#include <math.h>
 #include <vector>
-
-const uint16_t WHITE        =   0xFFFF;
-const uint16_t BLACK        =   0x0000;
-const uint16_t RED          =   0xFA45;
-const uint16_t GREEN        =   0x76EE;
-const uint16_t GREENCLEAR   =   0x9F93;
-const uint16_t GREENCLEAR2  =   0xCF6E;
-const uint16_t BLUE         =   0x227E;
-const uint16_t BLUECLEAR    =   0x6D3E;
-const uint16_t CYAN         =   0xB7FF;
-const uint16_t VIOLET       =   0xAA1F;
-const uint16_t ORANGE       =   0xFCC2;
-const uint16_t GRAY         =   0x94B2;
-const uint16_t GRAYCLEAR    =   0xAD55;
-const uint16_t GRAYCLEAR2   =   0xD69A;
-const uint16_t BROWN        =   0xAB00;
-const uint16_t YELLOW       =   0xFFF1;
-const uint16_t YELLOWCLEAR  =   0xFFF5;
-const uint16_t BACKGROUND_COLOR = 0xEF5D;
-
-extern TFT_eSPI tft;
+#include <stdint.h>
+#include <stdlib.h>
 
 /// @brief Point in 16 bits projected coordinates (x,y) 
 struct Point16 {
-    Point16(){};
-    Point16( int16_t x, int16_t y) : x(x),y(y) {};
-    Point16 operator-(const Point16 p){ return Point16( x-p.x, y-p.y);};
-    Point16 operator+(const Point16 p){ return Point16( x+p.x, y+p.y);};
-    Point16( char *coords_pair); // char array like:  11.222,333.44
+    Point16()
+    {};
+
+    Point16(int16_t x, int16_t y) 
+    : x(x), y(y) 
+    {};
+
+    Point16(char *coords_pair) // char array like:  11.222,333.44
+    {
+        char *next;
+        x = (int16_t )round( strtod( coords_pair, &next));  // 1st coord // TODO: change by strtol and test
+        y = (int16_t )round( strtod( ++next, NULL));  // 2nd coord
+    }
+
+    Point16 operator-(const Point16 p)
+    {
+        return Point16( x-p.x, y-p.y);
+    };
+
+    Point16 operator+(const Point16 p)
+    { 
+        return Point16( x+p.x, y+p.y);
+    };
+
     int16_t x;
     int16_t y;
 };
 
-
 /// @brief Point in 32 bits projected coordinates (x,y) 
 struct Point32 {
-    Point32(){};
-    Point32( int32_t x, int32_t y) : x(x),y(y) {};
-    Point32( Point16 p): x(p.x), y(p.y) {};
-    Point32 operator-(const Point32 p){ return Point32( x-p.x, y-p.y);};
-    Point32 operator+(const Point32 p){ return Point32( x+p.x, y+p.y);};
-    Point16 toPoint16(){ return Point16( x, y);}; // TODO: check limits
-    bool operator==(const Point32 p){ return x==p.x && y==p.y; };
+    Point32()
+    {};
+
+    Point32(int32_t x, int32_t y) 
+    : x(x),y(y) 
+    {};
+
+    Point32(Point16 p)
+    : x(p.x), y(p.y) 
+    {};
+
+    Point32 operator-(const Point32 p)
+    { 
+        return Point32( x-p.x, y-p.y);};
+
+    Point32 operator+(const Point32 p)
+    {
+        return Point32( x+p.x, y+p.y);
+    };
+
+    Point16 toPoint16()
+    { 
+        return Point16(x, y);
+    }; // TODO: check limits
+
+    inline bool operator==(const Point32 p)
+    {
+        return x==p.x && y==p.y; 
+    };
 
     /// @brief Parse char array with the coordinates
     /// @param coords_pair char array like:  11.222,333.44
-    
     int32_t x;
     int32_t y;
 };
@@ -58,14 +76,31 @@ struct Point32 {
 
 // @brief Bounding Box
 struct BBox {
-    BBox() {};
+    BBox() 
+    {};
+
     // @brief Bounding Box
     // @param min top left corner
-    // @param max bottim right corner
-    BBox( Point32 min, Point32 max): min(min), max(max) {};
-    BBox operator-(const Point32 p){ return BBox( min-p, max-p);};
-    bool contains_point(const Point32 p);
-    bool intersects(const BBox b);
+    // @param max bottom right corner
+    BBox( Point32 min, Point32 max)
+    : min(min), max(max)
+    {};
+
+    BBox operator-(const Point32& point)
+    { 
+        return BBox(min-point, max-point);
+    };
+
+    inline bool containsPoint(const Point32& p)
+    { 
+        return p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y; 
+    }
+
+    inline bool intersects(const BBox& b)
+    { 
+        return !(b.min.x > max.x || b.max.x < min.x || b.min.y > max.y || b.max.y < min.y);
+    }
+
     Point32 min;
     Point32 max;
 };
@@ -97,30 +132,24 @@ struct Polygon {
     uint8_t maxzoom;
 };
 
+struct ViewPort 
+{
+    ViewPort(const Point32& location, const uint16_t zoom, const uint16_t w, const uint16_t h) 
+    : center(location), zoom_level(zoom), screen_width(w), screen_height(h)
+    {}
 
-struct ViewPort {
-    void setCenter(Point32& pcenter);
+    inline void setCenter(const Point32& location) {
+        center = location;
+        bbox.min.x = location.x - screen_width  * zoom_level / 2;
+        bbox.min.y = location.y - screen_height * zoom_level / 2;
+        bbox.max.x = location.x + screen_width  * zoom_level / 2;
+        bbox.max.y = location.y + screen_height * zoom_level / 2;
+    }
+
     Point32 center;
     BBox bbox;
+
+    uint16_t screen_width;
+    uint16_t screen_height;
+    uint16_t zoom_level;
 };
-
-
-/////////////////////  Functions  /////////////////////////
-
-struct MemCache;
-struct MapBlock;
-void draw( ViewPort& viewPort, MemCache& memCache);
-int16_t toScreenCoord( const int32_t pxy, const int32_t screen_centerxy);
-// std::vector<Point16> clip_polygon( BBox& bbox, std::vector<Point16>&  points);
-void stats( ViewPort& viewPort, MapBlock& mblock);
-void header_msg( String msg);
-
-/// @brief Clips a segment against a bbox and returns the intersection point. 
-/// You should know in advance which point in inside and which outside.
-/// @param p_in Point of the segment that is in the bbox
-/// @param p_out Point of the segment that is out of the bbox
-/// @param bbox clipping area boudaries
-/// @return 
-// Point16 clip_segment( Point16 p_in, Point16 p_out, BBox bbox);
-
-#endif
