@@ -1,15 +1,18 @@
-#include <Arduino.h>
-#include <TFT_eSPI.h>
+#ifdef ARDUINO
+    #include <Arduino.h>
+    #include "canvas.h"
+#else
+    #include <logs.h>
+#endif
+
 #include <colors.h>
-#include <log.h>
 
 #include "draw.h"
+
 #include "../lib/conf.h"
 
 struct MemCache;
 struct MapBlock;
-
-extern TFT_eSPI tft;
 
 inline int16_t toScreenCoord(const int32_t pxy, const int32_t screen_center_xy) // work with primitives for performance
 {
@@ -21,8 +24,8 @@ void fill_polygon(const Polygon& p) // scanline fill algorithm
     int16_t maxy = p.bbox.max.y;
     int16_t miny = p.bbox.min.y;
 
-    if( maxy >= SCREEN_HEIGHT) maxy = SCREEN_HEIGHT-1;
-    if( miny < 0) miny = 0;
+    if(maxy >= SCREEN_HEIGHT) maxy = SCREEN_HEIGHT-1;
+    if(miny < 0) miny = 0;
     if(miny >= maxy){
         return;
     }
@@ -58,14 +61,14 @@ void fill_polygon(const Polygon& p) // scanline fill algorithm
             if( nodeX[i+1] < 0 ) continue;
             if (nodeX[i] < 0 ) nodeX[i] = 0;
             if (nodeX[i+1] > SCREEN_WIDTH) nodeX[i+1] = SCREEN_WIDTH;
-            tft.drawLine( nodeX[i], SCREEN_HEIGHT - pixelY, nodeX[i+1], SCREEN_HEIGHT - pixelY, p.color);
+            tft_draw_line(nodeX[i], SCREEN_HEIGHT - pixelY, nodeX[i+1], SCREEN_HEIGHT - pixelY, p.color);
         }
     }
 }
 
 void draw(ViewPort& viewPort, MemCache& memCache)
 {
-    tft.fillScreen(BACKGROUND_COLOR);
+    tft_fill_screen();
 
     Polygon new_polygon;
     uint32_t total_time = millis();
@@ -113,7 +116,7 @@ void draw(ViewPort& viewPort, MemCache& memCache)
                 p1y = toScreenCoord( line.points[i].y, screen_center_mc.y); 
                 p2x = toScreenCoord( line.points[i+1].x, screen_center_mc.x); 
                 p2y = toScreenCoord( line.points[i+1].y, screen_center_mc.y); 
-                tft.drawWideLine(
+                tft_draw_wide_line(
                     p1x, SCREEN_HEIGHT - p1y,
                     p2x, SCREEN_HEIGHT - p2y,
                     line.width/zoom_level ?: 1, line.color, line.color);
@@ -125,7 +128,7 @@ void draw(ViewPort& viewPort, MemCache& memCache)
 
 
     // TODO: paint only in NAV mode
-    tft.fillTriangle(
+    tft_fill_triangle(
         SCREEN_WIDTH/2 - 4, SCREEN_HEIGHT/2 + 5, 
         SCREEN_WIDTH/2 + 4, SCREEN_HEIGHT/2 + 5, 
         SCREEN_WIDTH/2,     SCREEN_HEIGHT/2 - 6, 

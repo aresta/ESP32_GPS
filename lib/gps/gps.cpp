@@ -2,45 +2,52 @@
 #include <TinyGPS++.h>
 #include <math.h>
 #include <stdint.h>
+#include <graphics.h>
+
 #include "gps.h"
-#include "graphics.h"
+#include "../conf.h"
 
 TinyGPSPlus gps;
-
-#define DEG2RAD(a)   ((a) / (180 / M_PI))
-#define RAD2DEG(a)   ((a) * (180 / M_PI))
-#define EARTH_RADIUS 6378137
-double lat2y(double lat) { return log(tan( DEG2RAD(lat) / 2 + M_PI/4 )) * EARTH_RADIUS; }
-double lon2x(double lon) { return          DEG2RAD(lon)                 * EARTH_RADIUS; }
+HardwareSerial SerialGPS(1);
 
 /// @brief Get the current position from the GPS chip
 /// @param serialGPS handler
 /// @return projected coordinates in meters
-Coord getPosition(HardwareSerial& serialGPS)
+void getPosition(HardwareSerial& serialGPS, Coord& coord)
 {
-    Coord coord;
-    while( serialGPS.available() > 0){
-        if( gps.encode( serialGPS.read())){
+    while (serialGPS.available() > 0)
+    {
+        if (gps.encode(serialGPS.read()))
+        {
             coord.lat = gps.location.lat();
             coord.lng = gps.location.lng();
+
             coord.altitude = static_cast<int16_t>(gps.altitude.meters());
             coord.direction = static_cast<int16_t>(gps.course.deg()); // degrees
+            coord.satellites = static_cast<int16_t>(gps.satellites.value());
+            
             coord.isValid = gps.location.isValid();
             coord.isUpdated = gps.location.isUpdated();
-            coord.satellites = static_cast<int16_t>(gps.satellites.value());
+
             coord.hour = gps.time.hour();
             coord.minute = gps.time.minute();
             coord.second = gps.time.second();
         }
-    }    
-    return coord;
+    }
 }
 
-Point32 Coord::getPoint32()
+void gpsInit()
 {
-    return Point32( lon2x( lng), lat2y( lat));
+    #ifdef ARDUINO_uPesy_WROVER
+    #else   
+        SerialGPS.begin(9600, SERIAL_8N1, GPS_TX, GPS_RX);
+    #endif
 }
 
+void gpsGetPosition(Coord& coord)
+{
+    return getPosition(SerialGPS, coord);
+}
 
 // Serial.print("LAT=");  Serial.println(gps.location.lat(), 6);
 // Serial.print("LONG="); Serial.println(gps.location.lng(), 6);

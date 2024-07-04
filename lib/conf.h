@@ -1,7 +1,6 @@
-#ifndef conf_h_
-#define conf_h_
+#pragma once
 
-#define CORE_DEBUG_LEVEL 5 
+// #define CORE_DEBUG_LEVEL 5 
 
 #define SCREEN_WIDTH 240    // tft.width()
 #define SCREEN_HEIGHT 320   // tft.height()
@@ -31,6 +30,3 @@ extern int zoom_level;
 #define DEVMODE_MOVE 2
 #define DEVMODE_ZOOM 3
 #define DEVMODE_MENU 4
-
-
-#endif

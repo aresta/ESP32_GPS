@@ -1,18 +1,14 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
-#include "colors.h"
-#include <log.h>
-#include "files.h"
-#include "graphics.h"
-#include "maps.h"
-#include "gps.h"
+#include <colors.h>
+#include <graphics.h>
+#include <gps.h>
+#include <files.h>
+#include <maps.h>
+#include <canvas.h>
+
 #include "draw.h"
-
 #include "../lib/conf.h"
-#include "env_example.h"
-
-TFT_eSPI tft = TFT_eSPI();
-HardwareSerial SerialGPS(1);
 
 Point32 map_center(INIT_POS);
 MemCache memCache;
@@ -26,29 +22,9 @@ ViewPort viewPort(map_center, zoom_level, TFT_WIDTH, TFT_HEIGHT);
 
 const IFileSystem* fileSystem = get_file_system(base_folder);
 
-void tft_header( Coord& pos)
-{
-    tft.fillRect(0, 0, 240, 25, YELLOWCLEAR);
-    tft.setCursor(5,5,2);
-    tft.print(pos.lng, 4);
-    tft.print(" "); tft.print(pos.lat, 4);
-    tft.print(" Sats: "); tft.print(pos.satellites);
-    tft.print(" M: "); tft.print( mode);
-}
-
-void tft_footer( String msg)
-{
-    tft.fillRect(0, 300, 240, 320, CYAN);
-    tft.setCursor(5,305,2);
-    tft.println(msg);
-}
-
-void tft_msg( String msg)
-{
-    tft.fillRect(0, 0, 240, 25, CYAN);
-    tft.setCursor(5,5,2);
-    tft.println(msg);
-}
+double prev_lat=500, prev_lng=500;
+Coord coord;
+std::vector<Coord> samples;
 
 void printFreeMem()
 {
@@ -73,34 +49,26 @@ void setup()
 
     Serial.begin(115200);
     // printFreeMem();
-#ifdef ARDUINO_uPesy_WROVER
-#else   
-    SerialGPS.begin(9600, SERIAL_8N1, GPS_TX, GPS_RX);
-#endif
-    digitalWrite( SD_CS_PIN, HIGH); // SD card chips select
-    digitalWrite( TFT_CS, HIGH); // TFT chip select
+    gpsInit();
 
-    tft.init();
-    tft.setRotation(0);  // portrait
-    tft.invertDisplay( true);
-    tft.fillScreen( CYAN);
-    tft.setTextColor(TFT_BLACK);
-    digitalWrite( TFT_BLK_PIN, HIGH);
-    tft.setCursor(5,5,4);
-    tft.println("Initializing...");
-    digitalWrite( TFT_BLK_PIN, HIGH);
+    digitalWrite( SD_CS_PIN, HIGH); // SD card chips select
+
+    tft_init();
+
     if(!init_file_system()) {
-        tft.println("Error: SD Card Mount Failed!");
+        tft_println("Error: SD Card Mount Failed!");
         while(true);
     }
-    tft.println("Reading map...");
+    tft_println("Reading map...");
 
-    Point32 map_center( INIT_POS);
+    Point32 map_center(INIT_POS);
     // TODO: keep and show last position
     viewPort.setCenter( map_center);
     get_map_blocks(fileSystem, viewPort.bbox, memCache );
-    draw( viewPort, memCache);
+    draw(viewPort, memCache);
+
     tft_msg("Waiting for satellites...");
+
     // stats(viewPort, mmap);
     // printFreeMem();
 
@@ -109,28 +77,26 @@ void setup()
     esp_sleep_enable_gpio_wakeup();
 }
 
-double prev_lat=500, prev_lng=500;
-Coord coord;
-std::vector<Coord> samples;
 void loop()
 {
     Point32 p = viewPort.center;
     bool moved = false;
 
-    if( mode == DEVMODE_NAV){
-        coord = getPosition( SerialGPS );
-        if( coord.isValid && 
+    if (mode == DEVMODE_NAV) {
+        Coord coord;
+        gpsGetPosition(coord);
+        if (coord.isValid && 
             abs(coord.lat-prev_lat) > 0.00005 &&
-            abs(coord.lng-prev_lng) > 0.00005 ){
+            abs(coord.lng-prev_lng) > 0.00005) {
                 p = coord.getPoint32();
                 prev_lat = coord.lat;
                 prev_lng = coord.lng;
                 moved = true;
-        }   
+            }   
     }
 
-    if( digitalRead( TFT_OFF_BUTTON) == LOW){
-        digitalWrite( TFT_BLK_PIN, LOW);
+    if (digitalRead(TFT_OFF_BUTTON) == LOW) {
+        digitalWrite(TFT_BLK_PIN, LOW);
         // digitalWrite( GPS_CE, LOW); // GPS low power mode. TODO: this way needs cold restart => don't work for tracking
         // setCpuFrequencyMhz(40); // TODO: check 20,10
         log_d("Enter TFT_OFF_BUTTON");
@@ -142,7 +108,7 @@ void loop()
             esp_light_sleep_start();
             wakeup_reason = esp_sleep_get_wakeup_cause();
             if( wakeup_reason == ESP_SLEEP_WAKEUP_TIMER){
-                coord = getPosition( SerialGPS );
+                gpsGetPosition(coord);
                 // TODO
             }
         } while( wakeup_reason == ESP_SLEEP_WAKEUP_TIMER);
@@ -151,36 +117,36 @@ void loop()
         delay(400); // button debounce
     }
 
-    if( digitalRead( SELECT_BUTTON) == LOW){
+    if (digitalRead(SELECT_BUTTON) == LOW) {
         mode += 1;
         if( mode > DEVMODE_ZOOM){ 
             mode = DEVMODE_NAV;
             moved = true; // recenter
         }
-        tft_header( coord);
-        delay( 200); // button debouncing
+        tft_header(coord, mode);
+        delay(200); // button debouncing
     }
 
-    if( mode == DEVMODE_MOVE){
+    if (mode == DEVMODE_MOVE) {
         if( digitalRead( UP_BUTTON) == LOW)    { p.y += 40*zoom_level; moved = true; }
         if( digitalRead( DOWN_BUTTON) == LOW)  { p.y -= 40*zoom_level; moved = true; }
         if( digitalRead( LEFT_BUTTON) == LOW)  { p.x -= 40*zoom_level; moved = true; }
         if( digitalRead( RIGHT_BUTTON) == LOW) { p.x += 40*zoom_level; moved = true; }
     }
 
-    if( mode == DEVMODE_ZOOM){
+    if (mode == DEVMODE_ZOOM) {
         if( digitalRead( UP_BUTTON) == LOW)    { zoom_level += 1; moved = true; }
         if( digitalRead( DOWN_BUTTON) == LOW)  { zoom_level -= 1; moved = true; }
         if( zoom_level < 1){ zoom_level = 1; moved = false; } 
         if( zoom_level > MAX_ZOOM){ zoom_level = MAX_ZOOM; moved = false; }
     }
 
-    if( moved) {
-        viewPort.setCenter( p);
+    if (moved) {
+        viewPort.setCenter(p);
         get_map_blocks(fileSystem, viewPort.bbox, memCache);
-        draw( viewPort, memCache);
-        tft_header( coord);
-        tft_footer( String(zoom_level));
-        delay( 10);
+        draw(viewPort, memCache);
+        tft_header(coord, mode);
+        tft_footer(String(zoom_level).c_str());
+        delay(10);
     }
 }

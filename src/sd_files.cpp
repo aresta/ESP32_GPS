@@ -3,10 +3,11 @@
 #include "FS.h"
 #include "SPI.h"
 #include <StreamUtils.h>
-#include "../lib/conf.h"
-#include <log.h>
-#include <files.h>
+#include <canvas.h>
 #include <draw.h>
+
+#include "files.h"
+#include "../conf.h"
 
 class ArduinoReadFileStream : public IReadStream {
     public:
@@ -50,7 +51,7 @@ bool init_sd_card() {
     
     if (cardType == CARD_NONE) {
         Serial.println("No SD card attached");
-        header_msg("No SD card attached");
+        tft_header_msg("No SD card attached");
         return false;
     }
     

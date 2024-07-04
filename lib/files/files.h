@@ -14,4 +14,4 @@ class IFileSystem {
 
 bool init_file_system();
 
-IFileSystem* get_file_system(const char* root = NULL);
+IFileSystem* get_file_system(const char* root = (const char*)0);

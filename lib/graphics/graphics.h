@@ -73,7 +73,6 @@ struct Point32 {
     int32_t y;
 };
 
-
 // @brief Bounding Box
 struct BBox {
     BBox() 

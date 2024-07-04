@@ -1,5 +1,4 @@
-#ifndef maps_h_
-#define maps_h_
+#pragma once
 
 #include <stdint.h>
 #include <vector>
@@ -36,5 +35,3 @@ struct MemCache {
 };
 
 void get_map_blocks(const IFileSystem* fileSystem, BBox& bbox, MemCache& memCache);
-
-#endif

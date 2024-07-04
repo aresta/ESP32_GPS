@@ -1,10 +1,12 @@
+#ifdef ARDUINO
 #include <Arduino.h>
-#include <string>
+#else
+#include <logs.h>
+#endif
 
-#include <log.h>
 #include <files.h>
 #include <graphics.h>
-//#include <draw.h>
+#include <canvas.h>
 #include "../conf.h"
 
 #include "maps.h"
@@ -260,7 +262,7 @@ void get_map_blocks(const IFileSystem* fileSystem, BBox& bbox, MemCache& memCach
 
         if (!stream) {
             snprintf(file_name, sizeof(file_name), "Map file not found: %s/%d/%d.fmp", folder_name, block_x, block_y);
-            header_msg(file_name);
+            tft_header_msg(file_name);
             while(true);
         }
 
@@ -278,5 +280,5 @@ void get_map_blocks(const IFileSystem* fileSystem, BBox& bbox, MemCache& memCach
         log_d("FreeHeap: %i", esp_get_free_heap_size());
     }   
 
-    log_d("memCache size: %i %i", memCache.blocks.size(), millis());
+    //log_d("memCache size: %i %i", memCache.blocks.size(), millis());
 }
