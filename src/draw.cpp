@@ -8,8 +8,9 @@
 #include <colors.h>
 #include <canvas.h>
 
-#include "draw.h"
 #include "../lib/conf.h"
+
+#include "draw.h"
 
 struct MemCache;
 struct MapBlock;

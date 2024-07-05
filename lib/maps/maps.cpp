@@ -244,7 +244,7 @@ void get_map_blocks(const IFileSystem* fileSystem, BBox& bbox, MemCache& memCach
         snprintf( folder_name, 9, "%+04d%+04d", folder_name_x, folder_name_y); // force sign and 4 chars per number
 
         char file_name[100];
-        snprintf(file_name, sizeof(file_name), "%s/%d/%d.fmp", folder_name, block_x, block_y);
+        snprintf(file_name, sizeof(file_name), "%s/%d_%d.fmp", folder_name, block_x, block_y);
         //String file_name = String("") + folder_name + "/" + block_x + "_" + block_y + ".fmp"; //  /maps/123_456/777_888
 
         // check if cache is full

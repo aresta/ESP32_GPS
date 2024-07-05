@@ -117,7 +117,7 @@ class LocalFileStreamFactory : public IFileSystem {
         {}
 
         inline virtual IReadStream* Open(const char* fileName) const {
-            auto fullPath =  _root + "\\" + fileName;
+            auto fullPath =  _root + "/" + fileName;
             return new LocalFileStream(fullPath.c_str());
         }
     private:

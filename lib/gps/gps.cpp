@@ -1,13 +1,14 @@
-#ifdef ARDUINO
-
-#include <Arduino.h>
-#include <TinyGPS++.h>
 #include <math.h>
 #include <stdint.h>
 #include <graphics.h>
 
 #include "gps.h"
 #include "../conf.h"
+
+#ifdef ARDUINO
+
+#include <Arduino.h>
+#include <TinyGPS++.h>
 
 TinyGPSPlus gps;
 HardwareSerial SerialGPS(1);
@@ -48,7 +49,7 @@ void gpsInit()
 
 void gpsGetPosition(Coord& coord)
 {
-    return getPosition(SerialGPS, coord);
+    getPosition(SerialGPS, coord);
 }
 
 // Serial.print("LAT=");  Serial.println(gps.location.lat(), 6);
@@ -59,5 +60,26 @@ void gpsGetPosition(Coord& coord)
 // Serial.print("hour ");  Serial.println(gps.time.hour());
 // Serial.print("minute ");  Serial.println(gps.time.minute());
 // Serial.print("satellites ");  Serial.println(gps.satellites.value());
+
+#else
+
+#include <chrono>
+
+void gpsGetPosition(Coord& coord)
+{
+    coord.lat = 41.419769;
+    coord.lng = 2.103490;
+
+    coord.altitude = static_cast<int16_t>(10);
+    coord.direction = static_cast<int16_t>(15); // degrees
+    coord.satellites = static_cast<int16_t>(4);
+    
+    coord.isValid = true;
+    coord.isUpdated = true;
+
+    coord.hour = 12;
+    coord.minute = 33;
+    coord.second = 12;
+}
 
 #endif

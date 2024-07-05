@@ -22,6 +22,11 @@ void printFreeMem()
 
 void Run();
 
+bool ReadInput(int pin)
+{
+    return digitalRead(pin) == LOW;
+}
+
 void setup()
 {
     pinMode( UP_BUTTON, INPUT_PULLUP);
