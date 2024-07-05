@@ -1,13 +1,20 @@
-#include <Arduino.h>
-#include "SD.h"
-#include "FS.h"
-#include "SPI.h"
-#include <StreamUtils.h>
+#ifdef ARDUINO
+    #include <Arduino.h>
+    #include "SD.h"
+    #include "FS.h"
+    #include "SPI.h"
+    #include <StreamUtils.h>
+#else
+    //#include "sdl_app.h"
+#endif
+
 #include <canvas.h>
 #include <draw.h>
 
 #include "files.h"
 #include "../conf.h"
+
+#ifdef ARDUINO
 
 class ArduinoReadFileStream : public IReadStream {
     public:
@@ -79,3 +86,14 @@ bool init_file_system() {
 IFileSystem* get_file_system(const char* root) {
     return new ArduinoFileStreamFactory(root);
 }
+
+#else
+
+bool init_file_system() {
+    return false;
+}
+
+IFileSystem* get_file_system(const char* root) {
+    return NULL;
+}
+#endif

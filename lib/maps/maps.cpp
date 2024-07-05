@@ -1,7 +1,8 @@
 #ifdef ARDUINO
-#include <Arduino.h>
+    #include <Arduino.h>
 #else
-#include <logs.h>
+    #include <logs.h>
+    #include <cassert>
 #endif
 
 #include <files.h>

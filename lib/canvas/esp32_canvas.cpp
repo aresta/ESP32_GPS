@@ -1,12 +1,13 @@
-#include <Arduino.h>
-#include <TFT_eSPI.h>
-
 #include <colors.h>
 #include <gps.h>
 
 #include "canvas.h"
-
 #include "../conf.h"
+
+#ifdef ARDUINO
+
+#include <Arduino.h>
+#include <TFT_eSPI.h>
 
 TFT_eSPI tft = TFT_eSPI();
 
@@ -83,3 +84,57 @@ void tft_header_msg(const char* msg)
     tft.setCursor(5,5,2);
     tft.print( msg);
 }
+
+#else
+
+void tft_init()
+{
+// TODO
+}
+
+void tft_println(const char* text)
+{
+// TODO
+}
+
+void tft_header(const Coord& pos, const int mode)
+{
+// TODO
+}
+
+void tft_footer(const char* msg)
+{
+// TODO
+}
+
+void tft_msg(const char* msg)
+{
+// TODO
+}
+
+void tft_fill_screen()
+{
+// TODO
+}
+
+void tft_draw_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint32_t color)
+{
+// TODO
+}
+
+void tft_draw_wide_line(float ax, float ay, float bx, float by, float wd, uint32_t fg_color, uint32_t bg_color)
+{
+// TODO
+}
+
+void tft_fill_triangle(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t color)
+{
+// TODO
+}
+
+void tft_header_msg(const char* msg)
+{
+// TODO
+}
+
+#endif

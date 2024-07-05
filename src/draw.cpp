@@ -1,14 +1,14 @@
 #ifdef ARDUINO
     #include <Arduino.h>
-    #include "canvas.h"
 #else
     #include <logs.h>
+    #include <cassert>
 #endif
 
 #include <colors.h>
+#include <canvas.h>
 
 #include "draw.h"
-
 #include "../lib/conf.h"
 
 struct MemCache;

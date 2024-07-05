@@ -1,3 +1,5 @@
+#ifdef ARDUINO
+
 #include <Arduino.h>
 #include <TinyGPS++.h>
 #include <math.h>
@@ -57,3 +59,5 @@ void gpsGetPosition(Coord& coord)
 // Serial.print("hour ");  Serial.println(gps.time.hour());
 // Serial.print("minute ");  Serial.println(gps.time.minute());
 // Serial.print("satellites ");  Serial.println(gps.satellites.value());
+
+#endif
