@@ -43,9 +43,9 @@ void Run()
 
     Point32 map_center(INIT_POS);
     // TODO: keep and show last position
-    viewPort.setCenter(map_center);
-    get_map_blocks(fileSystem, viewPort.bbox, memCache );
-    draw(viewPort, memCache);
+    // viewPort.setCenter(map_center);
+    // get_map_blocks(fileSystem, viewPort.bbox, memCache );
+    // draw(viewPort, memCache);
 
     tft_msg("Waiting for satellites...");
 }

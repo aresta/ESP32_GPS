@@ -90,7 +90,7 @@ IFileSystem* get_file_system(const char* root) {
 #else
 
 bool init_file_system() {
-    return false;
+    return true;
 }
 
 IFileSystem* get_file_system(const char* root) {

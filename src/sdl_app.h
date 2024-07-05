@@ -31,12 +31,12 @@ int main()
 	SDL_SetRenderDrawColor(_sdl, 255, 0, 0, 0);
 	SDL_RenderClear(_sdl);
 
-	// SDL_RenderPresent(_sdl);
+	SDL_RenderPresent(_sdl);
 
-	// if (canvas == NULL) {
-	// 	fprintf(stderr, "ERROR: can't create renderer: %s\n", SDL_GetError());
-	// 	return EXIT_FAILURE;
-	// }
+	if (_sdl == NULL) {
+		fprintf(stderr, "ERROR: can't create renderer: %s\n", SDL_GetError());
+		return EXIT_FAILURE;
+	}
 
 	auto start_time = std::chrono::high_resolution_clock::now();
 
