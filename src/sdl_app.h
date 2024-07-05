@@ -8,9 +8,14 @@
 
 SDL_Renderer* _sdl;
 
-void Run();
+void Setup();
 
 void Loop();
+
+void delay(uint32_t msec)
+{
+    SDL_Delay(msec);
+}
 
 bool ReadInput(int pin)
 {
@@ -38,11 +43,6 @@ bool ReadInput(int pin)
 	}
 }
 
-void delay(uint32_t msec)
-{
-    SDL_Delay(msec);
-}
-
 int main()
 {
     SDL_Init(SDL_INIT_VIDEO);
@@ -68,40 +68,27 @@ int main()
 		return EXIT_FAILURE;
 	}
 
-	auto start_time = std::chrono::high_resolution_clock::now();
+	// auto start_time = std::chrono::high_resolution_clock::now();
 
-    Run();
+    Setup();
 
 	SDL_RenderPresent(_sdl);
 
-    auto end_time = std::chrono::high_resolution_clock::now();
-	auto time = end_time - start_time;
+    // auto end_time = std::chrono::high_resolution_clock::now();
+	// auto time = end_time - start_time;
 
     //std::cout << time / std::chrono::milliseconds(1) << "ms to run.\n";
 
-	// for (int i = 0; i < 322; i++) {
-	// 	input_keys[i] = false;
-	// }
-
 	do {
 		Loop();
+
 		SDL_Delay(10);
 		SDL_PollEvent(&event);
 		SDL_RenderPresent(_sdl);
-
-		// switch (event.type) {
-		// 	case SDL_KEYDOWN:
-		// 		input_keys[event.key.keysym.sym] = true;
-		// 		break;
-		// 	case SDL_KEYUP:
-		// 		input_keys[event.key.keysym.sym] = false;
-		// 		break;
-		// }
 	} 
 	while (event.type != SDL_QUIT);
 
 	SDL_DestroyRenderer(_sdl);
-
 	SDL_Quit();
 
 	return 0;

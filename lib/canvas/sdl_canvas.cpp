@@ -4,60 +4,7 @@
 #include "canvas.h"
 #include "../conf.h"
 
-#ifdef ARDUINO
-
-void tft_println(const char* text)
-{
-    tft.println(text);
-}
-
-void tft_header(const Coord& pos, const int mode)
-{
-    tft.fillRect(0, 0, 240, 25, YELLOWCLEAR);
-    tft.setCursor(5,5,2);
-    tft.print(pos.lng, 4);
-    tft.print(" "); tft.print(pos.lat, 4);
-    tft.print(" Sats: "); tft.print(pos.satellites);
-    tft.print(" M: "); tft.print(mode);
-}
-
-void tft_footer(const char* msg)
-{
-    tft.fillRect(0, 300, 240, 320, CYAN);
-    tft.setCursor(5,305,2);
-    tft.println(msg);
-}
-
-void tft_msg(const char* msg)
-{
-    tft.fillRect(0, 0, 240, 25, CYAN);
-    tft.setCursor(5,5,2);
-    tft.println(msg);
-}
-
-void tft_draw_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint32_t color)
-{
-    tft.drawLine( x0, y0, x1, y1, color);
-}
-
-void tft_draw_wide_line(float ax, float ay, float bx, float by, float wd, uint32_t fg_color, uint32_t bg_color)
-{
-    tft.drawWideLine(ax, ay, bx, by, wd, fg_color, bg_color);
-}
-
-void tft_fill_triangle(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t color)
-{
-    tft.fillTriangle(x0, y0, x1, y1, x2, y2, color);
-}
-
-void tft_header_msg(const char* msg)
-{
-    tft.fillRect(0, 0, 240, 25, YELLOWCLEAR);
-    tft.setCursor(5,5,2);
-    tft.print( msg);
-}
-
-#else
+#ifndef ARDUINO
 
 #include <SDL2/SDL.h>
 
@@ -78,9 +25,7 @@ inline int SDL_SetRenderDrawColor(SDL_Renderer* render, uint16_t color565)
 }
 
 void tft_init()
-{
-// TODO
-}
+{ }
 
 void tft_println(const char* text)
 {
@@ -102,6 +47,18 @@ void tft_header(const Coord& pos, const int mode)
     // tft.print(" M: "); tft.print(mode);
 }
 
+void tft_header_msg(const char* msg)
+{
+    SDL_Rect rect { 0, 0, 240, 25 };
+
+    SDL_SetRenderDrawColor(_sdl, YELLOWCLEAR);
+    SDL_RenderFillRect(_sdl, &rect);
+
+    // tft.fillRect(0, 0, 240, 25, YELLOWCLEAR);
+    // tft.setCursor(5,5,2);
+    // tft.print(msg);
+}
+
 void tft_footer(const char* msg)
 {
     SDL_Rect rect { 0, 300, 240, 320};
@@ -113,6 +70,7 @@ void tft_footer(const char* msg)
     // tft.setCursor(5,305,2);
     // tft.println(msg);
 }
+
 
 void tft_msg(const char* msg)
 {
@@ -135,6 +93,7 @@ void tft_draw_wide_line(float ax, float ay, float bx, float by, float wd, uint32
 {
     SDL_SetRenderDrawColor(_sdl, fg_color);
     auto res = SDL_RenderDrawLine(_sdl, ax, ay, bx, by);
+    // TODO
 }
 
 void tft_fill_triangle(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t color)
@@ -156,18 +115,6 @@ void tft_fill_triangle(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x
     };
 
    auto res = SDL_RenderGeometry(_sdl, nullptr, verts.data(), verts.size(), nullptr, 0);
-}
-
-void tft_header_msg(const char* msg)
-{
-    SDL_Rect rect { 0, 0, 240, 25 };
-
-    SDL_SetRenderDrawColor(_sdl, YELLOWCLEAR);
-    SDL_RenderFillRect(_sdl, &rect);
-
-    // tft.fillRect(0, 0, 240, 25, YELLOWCLEAR);
-    // tft.setCursor(5,5,2);
-    // tft.print(msg);
 }
 
 #endif

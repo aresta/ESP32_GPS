@@ -102,7 +102,7 @@ void Loop()
         get_map_blocks(fileSystem, viewPort.bbox, memCache);
         draw(viewPort, memCache);
         tft_header(coord, mode);
-        //tft_footer(std::string(zoom_level).c_str());
+        tft_footer(std::to_string(zoom_level).c_str());
         delay(10);
     }
 }
