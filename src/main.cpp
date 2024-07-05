@@ -27,7 +27,7 @@ double prev_lng = 500;
 Point32 map_center(INIT_POS);
 ViewPort viewPort(map_center, zoom_level, TFT_WIDTH, TFT_HEIGHT);
 
-const char* base_folder = "/mymap/";
+const char* base_folder = "/Users/anatolii.klots/Documents/Sources/OSM_Extract/maps/mymap";
 IFileSystem* fileSystem = get_file_system(base_folder);
 
 void Run()
@@ -43,9 +43,9 @@ void Run()
 
     Point32 map_center(INIT_POS);
     // TODO: keep and show last position
-    // viewPort.setCenter(map_center);
-    // get_map_blocks(fileSystem, viewPort.bbox, memCache );
-    // draw(viewPort, memCache);
+    viewPort.setCenter(map_center);
+    get_map_blocks(fileSystem, viewPort.bbox, memCache );
+    draw(viewPort, memCache);
 
     tft_msg("Waiting for satellites...");
 }
