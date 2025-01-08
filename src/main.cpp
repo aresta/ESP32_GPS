@@ -1,174 +1,184 @@
 #include <Arduino.h>
-#include <TFT_eSPI.h> 
 #include "maps.h"
 #include "gps.h"
 #include "graphics.h"
-#include "../lib/conf.h"
+#include "conf.h"
 #include "env.h"
 
 TFT_eSPI tft = TFT_eSPI();
-HardwareSerial SerialGPS(1);
+HardwareSerial serialGPS(1);
 ViewPort viewPort;
-MemCache memCache;
-int zoom_level = PIXEL_SIZE_DEF; // zoom_level = 1 correspond aprox to 1 meter / pixel
-int mode = DEVMODE_NAV;
-
-void tft_header( Coord& pos)
-{
-    tft.fillRect(0, 0, 240, 25, YELLOWCLEAR);
-    tft.setCursor(5,5,2);
-    tft.print(pos.lng, 4);
-    tft.print(" "); tft.print(pos.lat, 4);
-    tft.print(" Sats: "); tft.print(pos.satellites);
-    tft.print(" M: "); tft.print( mode);
-}
-
-void tft_footer( String msg)
-{
-    tft.fillRect(0, 300, 240, 320, CYAN);
-    tft.setCursor(5,305,2);
-    tft.println(msg);
-}
-
-void tft_msg( String msg)
-{
-    tft.fillRect(0, 0, 240, 25, CYAN);
-    tft.setCursor(5,5,2);
-    tft.println(msg);
-}
+uint8_t zoom_level = PIXEL_SIZE_DEF; // zoom_level = 1 corresponds aprox to 1 meter / pixel
+Coord gps_coord;
+Point32 display_pos;
+uint8_t mode = DEVMODE_NAV;
 
 void printFreeMem()
 {
-    log_i("FreeHeap: %i", esp_get_free_heap_size());
-    log_i("Heap minimum_free_heap_size: %i", esp_get_minimum_free_heap_size());
-    log_i("Heap largest_free_block: %i", heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
-    log_i("Task watermark: %i", uxTaskGetStackHighWaterMark(NULL));
+  log_i("FreeHeap: %i", esp_get_free_heap_size());
+  log_i("Heap minimum_free_heap_size: %i", esp_get_minimum_free_heap_size());
+  log_i("Heap largest_free_block: %i", heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+  log_i("Task watermark: %i", uxTaskGetStackHighWaterMark(NULL));
 }
 
 void setup()
 {
-    // Configure GPIO's
-    pinMode( UP_BUTTON, INPUT_PULLUP);
-    pinMode( DOWN_BUTTON, INPUT_PULLUP);
-    pinMode( LEFT_BUTTON, INPUT_PULLUP);
-    pinMode( RIGHT_BUTTON, INPUT_PULLUP);
-    pinMode( SELECT_BUTTON, INPUT_PULLUP);
-    pinMode( TFT_OFF_BUTTON, INPUT_PULLUP);
-    pinMode( MENU_BUTTON, INPUT_PULLUP);
-    pinMode( TFT_BLK_PIN, OUTPUT);
-    // pinMode( GPS_CE, OUTPUT);
-    digitalWrite( TFT_BLK_PIN, LOW); // switch off display
+  // Configure GPIO's
+  pinMode( UP_BUTTON, INPUT_PULLUP);
+  pinMode( DOWN_BUTTON, INPUT_PULLUP);
+  pinMode( LEFT_BUTTON, INPUT_PULLUP);
+  pinMode( RIGHT_BUTTON, INPUT_PULLUP);
+  pinMode( SELECT_BUTTON, INPUT_PULLUP);
+  pinMode( MENU_BUTTON, INPUT_PULLUP);
+  pinMode( TFT_BLK_PIN, OUTPUT);
+  // pinMode( GPS_CE, OUTPUT);
+  digitalWrite( TFT_BLK_PIN, LOW); // switch off display
 
-    Serial.begin(115200);
-    // printFreeMem();
-#ifdef ARDUINO_uPesy_WROVER
-#else   
-    SerialGPS.begin(9600, SERIAL_8N1, GPS_TX, GPS_RX);
-#endif
-    digitalWrite( SD_CS_PIN, HIGH); // SD card chips select
-    digitalWrite( TFT_CS, HIGH); // TFT chip select
+  Serial.begin(115200);
+  // delay(1000);
+  // printFreeMem();
+  serialGPS.begin( 9600, SERIAL_8N1, GPS_TX, GPS_RX);
+  delay(50);
 
-    tft.init();
-    tft.setRotation(0);  // portrait
-    tft.invertDisplay( true);
-    tft.fillScreen( CYAN);
-    tft.setTextColor(TFT_BLACK);
-    digitalWrite( TFT_BLK_PIN, HIGH);
-    tft.setCursor(5,5,4);
-    tft.println("Initializing...");
-    digitalWrite( TFT_BLK_PIN, HIGH);
-    if(!init_sd_card()) {
-        tft.println("Error: SD Card Mount Failed!");
-        while(true);
-        }
-    tft.println("Reading map...");
+  digitalWrite( SD_CS_PIN, HIGH); // SD card chips select
+  digitalWrite( TFT_CS, HIGH); // TFT chip select
+  digitalWrite( TFT_BLK_PIN, HIGH);
 
-    Point32 map_center( INIT_POS);
-    // TODO: keep and show last position
-    viewPort.setCenter( map_center);
-    get_map_blocks( viewPort.bbox, memCache );
-    draw( viewPort, memCache);
-    tft_msg("Waiting for satellites...");
-    // stats(viewPort, mmap);
-    // printFreeMem();
+  tft.init();
+  tft.setRotation(0);  // portrait
+  tft.invertDisplay( true);
+  tft.fillScreen( CYAN);
+  tft.setTextColor(TFT_BLACK);
+  tft_msg("Initializing...");
+  log_i("Initializing...");
+  if(!init_sd_card()) {
+    tft_msg("Error: SD Card Mount Failed!");
+    while(true);
+  }
 
-    // digitalWrite( GPS_CE, HIGH); // GPS low power mode disabled
-    gpio_wakeup_enable( (gpio_num_t )TFT_OFF_BUTTON, GPIO_INTR_LOW_LEVEL);
-    esp_sleep_enable_gpio_wakeup();
+  log_i("Waiting for satellites...");
+  serialGPS.println("$PMTK225,0*2B"); // set 'full on' mode
+  // stats(viewPort, mmap);
+  // printFreeMem();
+
+  // digitalWrite( GPS_CE, HIGH); // GPS low power mode disabled
+  gpio_wakeup_enable( (gpio_num_t )MENU_BUTTON, GPIO_INTR_LOW_LEVEL);
+  esp_sleep_enable_gpio_wakeup();
+
+  display_pos = Point32( INIT_POS);  // TODO: get last position from flash memory
+  refresh_display();
 }
 
-double prev_lat=500, prev_lng=500;
-Coord coord;
-std::vector<Coord> samples;
+bool select_btn_pressed = false;
+bool up_btn_pressed = false;
+bool down_btn_pressed = false;
+bool left_btn_pressed = false;
+bool right_btn_pressed = false;
+bool menu_btn_pressed = false;
+
+void check_buttons()
+{
+  static uint32_t lastDebounceTime = 0;
+  const uint32_t debounceDelay = 200;
+
+  if( digitalRead( SELECT_BUTTON) == LOW && (millis() - lastDebounceTime) > debounceDelay) {
+    lastDebounceTime = millis();
+    select_btn_pressed = true;
+  }
+  else if( digitalRead( UP_BUTTON) == LOW && (millis() - lastDebounceTime) > debounceDelay) {
+    lastDebounceTime = millis();
+    up_btn_pressed = true;
+  }
+  else if( digitalRead( DOWN_BUTTON) == LOW && (millis() - lastDebounceTime) > debounceDelay) {
+    lastDebounceTime = millis();
+    down_btn_pressed = true;
+  }
+  else if( digitalRead( LEFT_BUTTON) == LOW && (millis() - lastDebounceTime) > debounceDelay) {
+    lastDebounceTime = millis();
+    left_btn_pressed = true;
+  }
+  else if( digitalRead( RIGHT_BUTTON) == LOW && (millis() - lastDebounceTime) > debounceDelay) {
+    lastDebounceTime = millis();
+    right_btn_pressed = true;
+  }
+  else if( digitalRead( MENU_BUTTON) == LOW && (millis() - lastDebounceTime) > debounceDelay) {
+    lastDebounceTime = millis();
+    menu_btn_pressed = true;
+  }
+
+}
+
 void loop()
 {
-    Point32 p = viewPort.center;
-    bool moved = false;
-
-    if( mode == DEVMODE_NAV){
-        coord = getPosition( SerialGPS );
-        if( coord.isValid && 
-            abs(coord.lat-prev_lat) > 0.00005 &&
-            abs(coord.lng-prev_lng) > 0.00005 ){
-                p = coord.getPoint32();
-                prev_lat = coord.lat;
-                prev_lng = coord.lng;
-                moved = true;
-        }   
+  if( !gps_coord.fixAcquired){
+    getPosition();
+    if( gps_coord.isValid){
+      display_pos = gps_coord.getPoint32();
+      log_d("Reception! Fix?: %i, Sats: %i", gps_coord.fixAcquired, gps_coord.satellites);
+      if( gps_coord.prev_lat != gps_coord.lat || gps_coord.prev_lng != gps_coord.lng){
+        refresh_display();
+      }
+    } else{
+      delay(100); // TODO
     }
+  }
 
-    if( digitalRead( TFT_OFF_BUTTON) == LOW){
-        digitalWrite( TFT_BLK_PIN, LOW);
-        // digitalWrite( GPS_CE, LOW); // GPS low power mode. TODO: this way needs cold restart => don't work for tracking
-        // setCpuFrequencyMhz(40); // TODO: check 20,10
-        log_d("Enter TFT_OFF_BUTTON");
-        esp_sleep_wakeup_cause_t wakeup_reason;
-        delay(400); // button debounce
-        do {
-            // esp_sleep_enable_timer_wakeup( 10 * 1000000);
-            log_d("esp_light_sleep_start");
-            esp_light_sleep_start();
-            wakeup_reason = esp_sleep_get_wakeup_cause();
-            if( wakeup_reason == ESP_SLEEP_WAKEUP_TIMER){
-                coord = getPosition( SerialGPS );
-                // TODO
-            }
-        } while( wakeup_reason == ESP_SLEEP_WAKEUP_TIMER);
-        log_d("Wakeup");
+  check_buttons();
+  if( menu_btn_pressed) mode = DEVMODE_LOWPOW;
+  switch( mode){
+    case DEVMODE_NAV:
+      getPosition();
+      if( gps_coord.isValid && gps_coord.isUpdated && gps_coord.fixAcquired){
+        display_pos = gps_coord.getPoint32();  // center display in gps coord
+        log_i("Pos Updated");
+        refresh_display();
+      }
+      if( select_btn_pressed) mode = DEVMODE_MOVE;
+      break;
+    
+    case DEVMODE_MOVE:
+      if( up_btn_pressed){    display_pos.y += 40*zoom_level; refresh_display(); }
+      if( down_btn_pressed){  display_pos.y -= 40*zoom_level; refresh_display(); }
+      if( left_btn_pressed){  display_pos.x -= 40*zoom_level; refresh_display(); }
+      if( right_btn_pressed){ display_pos.x += 40*zoom_level; refresh_display(); }
+      if( select_btn_pressed) mode = DEVMODE_ZOOM; 
+      break;
+    
+    case DEVMODE_ZOOM:
+      if( up_btn_pressed && zoom_level < MAX_ZOOM){ zoom_level += 1; refresh_display(); }
+      if( down_btn_pressed && zoom_level > 1){      zoom_level -= 1; refresh_display(); }
+      if( select_btn_pressed){ 
+        mode = DEVMODE_NAV;
+        if( gps_coord.isValid) display_pos = gps_coord.getPoint32();
+      }
+      break;
+
+    case DEVMODE_LOWPOW: // TODO
+      digitalWrite( TFT_BLK_PIN, LOW);
+      // sleep...
+      esp_sleep_enable_timer_wakeup( 20 * 1000000);
+      serialGPS.println("$PMTK161,0*28"); // enter standby Mode
+      // serialGPS.println("$PMTK225,8*23"); // set 'Alwayslocate' mode
+      log_i("esp_light_sleep_start");
+      delay(400); // debounce button
+      esp_light_sleep_start();
+
+      // wakeup_reason = esp_sleep_get_wakeup_cause();
+      serialGPS.println("$PMTK225,0*2B"); // back to 'full on' mode
+      if( menu_btn_pressed){
+        mode = DEVMODE_NAV;
         digitalWrite( TFT_BLK_PIN, HIGH);
-        delay(400); // button debounce
-    }
+      }
+      delay(400); // debounce button
+      break;
+  }
 
-    if( digitalRead( SELECT_BUTTON) == LOW){
-        mode += 1;
-        if( mode > DEVMODE_ZOOM){ 
-            mode = DEVMODE_NAV;
-            moved = true; // recenter
-        }
-        tft_header( coord);
-        delay( 200); // button debouncing
-    }
-
-    if( mode == DEVMODE_MOVE){
-        if( digitalRead( UP_BUTTON) == LOW)    { p.y += 40*zoom_level; moved = true; }
-        if( digitalRead( DOWN_BUTTON) == LOW)  { p.y -= 40*zoom_level; moved = true; }
-        if( digitalRead( LEFT_BUTTON) == LOW)  { p.x -= 40*zoom_level; moved = true; }
-        if( digitalRead( RIGHT_BUTTON) == LOW) { p.x += 40*zoom_level; moved = true; }
-    }
-
-    if( mode == DEVMODE_ZOOM){
-        if( digitalRead( UP_BUTTON) == LOW)    { zoom_level += 1; moved = true; }
-        if( digitalRead( DOWN_BUTTON) == LOW)  { zoom_level -= 1; moved = true; }
-        if( zoom_level < 1){ zoom_level = 1; moved = false; } 
-        if( zoom_level > MAX_ZOOM){ zoom_level = MAX_ZOOM; moved = false; }
-    }
-
-    if( moved) {
-        viewPort.setCenter( p);
-        get_map_blocks( viewPort.bbox, memCache);
-        draw( viewPort, memCache);
-        tft_header( coord);
-        tft_footer( String(zoom_level));
-        delay( 10);
-    }
+  if( select_btn_pressed) refresh_display();  // TODO: refresh only header
+  up_btn_pressed = false;
+  down_btn_pressed = false;
+  left_btn_pressed = false;
+  right_btn_pressed = false;
+  select_btn_pressed = false;
+  select_btn_pressed = false;
+  menu_btn_pressed = false;
 }
