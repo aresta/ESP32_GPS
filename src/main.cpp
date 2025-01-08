@@ -114,8 +114,8 @@ void loop()
     getPosition();
     if( gps_coord.isValid){
       display_pos = gps_coord.getPoint32();
-      log_d("Reception! Fix?: %i, Sats: %i", gps_coord.fixAcquired, gps_coord.satellites);
-      if( gps_coord.prev_lat != gps_coord.lat || gps_coord.prev_lng != gps_coord.lng){
+      log_d("Reception! Fix?:%i, Sats:%i, isUpdated:%i", gps_coord.fixAcquired, gps_coord.satellites, gps_coord.isUpdated);
+      if( gps_coord.isUpdated){
         refresh_display();
       }
     } else{

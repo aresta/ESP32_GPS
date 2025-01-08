@@ -31,14 +31,19 @@ void getPosition()
     gps_coord.altitude = static_cast<int16_t>(gps.altitude.meters());
     gps_coord.direction = static_cast<int16_t>(gps.course.deg()); // degrees
     gps_coord.isValid = true;
-    gps_coord.isUpdated = gps.location.isUpdated() && (gps_coord.prev_lat != gps_coord.lat || gps_coord.prev_lng != gps_coord.lng);
+    gps_coord.isUpdated = gps.location.isUpdated() && (gps_coord.prev_lat != gps_coord.lat || gps_coord.prev_lng != gps_coord.lng); //TODO: review
     gps_coord.satellites = static_cast<int16_t>(gps.satellites.value());
     gps_coord.hour = gps.time.hour();
     gps_coord.minute = gps.time.minute();
     gps_coord.second = gps.time.second();
     if( gps_coord.satellites >= 4){
-      if( !gps_coord.fixAcquired) log_d("Fix Acquired! Sats: %i", gps_coord.satellites);
-      gps_coord.fixAcquired = true;
+      if( !gps_coord.fixAcquired){
+        log_d("Fix Acquired! Sats: %i", gps_coord.satellites);
+        log_d("isUpdated:%i", gps_coord.isUpdated);
+        log_d("prev_lat:%f, lat:%f, prev_lng:%f, lng:%f", gps_coord.prev_lat, gps_coord.lat, gps_coord.prev_lng, gps_coord.lng);
+        gps_coord.fixAcquired = true;
+        gps_coord.isUpdated = true;
+      }
     } else if( gps_coord.satellites <= 3){
       gps_coord.fixAcquired = false;
       log_d("No fix! Sats: %i", gps_coord.satellites);
