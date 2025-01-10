@@ -28,8 +28,6 @@ The new version (still in design phase) with the ESP32-S3, battery charger, card
 The schematic:
 ![GPS ESP32](/img/schematic.jpg)
 
-I will share the kicad project also.
-
 
 The wiring for the basic prototype with the ESP32-S3 devkitc:
 ![GPS ESP32](/img/esp32-s3-wiring.jpg)
