@@ -26,7 +26,7 @@ The new version (still in design phase) with the ESP32-S3, battery charger, card
 ![GPS ESP32](/img/esp32-s3-pcb.jpg)
 
 The schematic:
-![GPS ESP32](/img/schematic_esp32-s3.jpg)
+![GPS ESP32](/img/schematic.jpg)
 
 I will share the kicad project also.
 
