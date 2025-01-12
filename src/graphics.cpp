@@ -53,12 +53,13 @@ void header_msg( String msg)
 
 void tft_header()
 {
-  tft.fillRect(0, 0, 240, 30, YELLOWCLEAR);
   if( gps_coord.fixAcquired){
+    tft.fillRect(0, 0, 240, 30, YELLOWCLEAR);
     tft.setCursor(2,5,4);
     tft.print( gps_coord.lng, 3);
     tft.print(", "); tft.print( gps_coord.lat, 3);
   } else {
+    tft.fillRect(0, 0, 240, 30, ORANGE);
     tft.setCursor(2,5,2);
     tft.print("Waiting for sats");
   }
@@ -89,6 +90,8 @@ void tft_msg( const char *msg)
 
 void refresh_display() 
 {
+  log_d("Fix?:%i, Sats:%i, isUpdated:%i", gps_coord.fixAcquired, gps_coord.satellites, gps_coord.isUpdated);
+  log_d("Altitude: %i", gps_coord.altitude);
   viewPort.setCenter( display_pos);
   get_map_blocks( viewPort.bbox, memCache);
   draw( viewPort, memCache);

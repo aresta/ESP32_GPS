@@ -101,7 +101,7 @@ void parse_coords( ReadBufferingStream& file, std::vector<Point16>& points)
       parse_str_until( file, ';', str);
       assert( str[0] != '\0');
       point.y = (int16_t )std::stoi( str);
-      // log_d("point: %i %i", point.x, point.y);
+      // log_v("point: %i %i", point.x, point.y);
     } catch( std::invalid_argument){
       log_e("parse_coords invalid_argument: %s", str);
     } catch( std::out_of_range){
@@ -114,7 +114,7 @@ void parse_coords( ReadBufferingStream& file, std::vector<Point16>& points)
 
 MapBlock* read_map_block( String file_name)
 {
-  log_d("read_map_block: %s", file_name.c_str());
+  log_v("read_map_block: %s", file_name.c_str());
   char c;
   char str[30];
   MapBlock* mblock = new MapBlock();
@@ -135,22 +135,22 @@ MapBlock* read_map_block( String file_name)
   int16_t count = parse_int16( file);
   assert( count > 0);
   line++;
-  log_d("count: %i", count);
+  log_v("count: %i", count);
 
   uint32_t total_points = 0;
   Polygon polygon;
   Point16 p;
   int16_t maxzoom;
   while( count > 0){
-    // log_d("line: %i", line);
+    // log_v("line: %i", line);
     parse_str_until( file, '\n', str); // color
     assert( str[0] == '0' && str[1] == 'x');
     polygon.color = (uint16_t )std::stoul( str, nullptr, 16);
-    // log_d("polygon.color: %i", polygon.color);
+    // log_v("polygon.color: %i", polygon.color);
     line++;
     parse_str_until( file, '\n', str); // maxzoom
     polygon.maxzoom = str[0] ? (uint8_t )std::stoi( str) : MAX_ZOOM;
-    // log_d("polygon.maxzoom: %i", polygon.maxzoom);
+    // log_v("polygon.maxzoom: %i", polygon.maxzoom);
     line++;
 
     parse_str_until( file, ':', str);
@@ -184,11 +184,11 @@ MapBlock* read_map_block( String file_name)
   count = parse_int16( file);
   assert( count > 0);
   line++;
-  log_d("count: %i", count);
+  log_v("count: %i", count);
   
   Polyline polyline;
   while( count > 0){
-    // log_d("line: %i", line);
+    // log_v("line: %i", line);
     parse_str_until( file, '\n', str); // color
     assert( str[0] == '0' && str[1] == 'x');
     polyline.color = (uint16_t )std::stoul( str, nullptr, 16);
@@ -219,14 +219,14 @@ MapBlock* read_map_block( String file_name)
     polyline.points.clear();
     parse_str_until( file, ':', str);
     if( strcmp( str, "coords") != 0){
-      log_d("coords tag. Line %i : %s", line, str);
+      log_v("coords tag. Line %i : %s", line, str);
       while(true);
     }
     parse_coords( file, polyline.points);
     line++;
     // if( line > 4050 && file_name == "/mymap/3_77/6_9"){
     //   for( Point16 p: polyline.points){
-    //     log_d("p.x, p.y %i %i", p.x, p.y);
+    //     log_v("p.x, p.y %i %i", p.x, p.y);
     //   }
     // }
     mblock->polylines.push_back( polyline);
@@ -244,7 +244,7 @@ MapBlock* read_map_block( String file_name)
 /// @param memCache map blocks in memory
 void get_map_blocks( BBox& bbox, MemCache& memCache)
 {
-  log_d("get_map_blocks %i", millis());
+  log_v("get_map_blocks %i", millis());
   for( MapBlock* block: memCache.blocks){
     block->inView = false;
   }
@@ -264,7 +264,7 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
     }
     if( found) continue;
     
-    log_d("load from disk (%i, %i) %i", block_min_x, block_min_y, millis());
+    log_v("load from disk (%i, %i) %i", block_min_x, block_min_y, millis());
     // block is not in memory => load from disk
     int32_t block_x = (block_min_x >> MAPBLOCK_SIZE_BITS) & MAPFOLDER_MASK;
     int32_t block_y = (block_min_y >> MAPBLOCK_SIZE_BITS) & MAPFOLDER_MASK;
@@ -290,11 +290,11 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
     memCache.blocks.push_back( new_block); // add the block to the memory cache
     assert( memCache.blocks.size() <= MAPBLOCKS_MAX);
 
-    log_d("Block readed from SD card: %p", new_block);
-    log_d("FreeHeap: %i", esp_get_free_heap_size());
+    log_v("Block readed from SD card: %p", new_block);
+    log_v("FreeHeap: %i", esp_get_free_heap_size());
   
   }   
-  log_d("memCache size: %i %i", memCache.blocks.size(), millis());
+  log_v("memCache size: %i %i", memCache.blocks.size(), millis());
 }
 
 

@@ -17,11 +17,13 @@ struct Coord {
   double prev_lat = 0;
   double prev_lng = 0;
   int16_t altitude = 0;
+  int16_t prev_altitude = 0;
   int16_t direction = 0;
   int16_t satellites = 0;
-  uint8_t hour = 0;
-  uint8_t minute = 0;
-  uint8_t second = 0;
+  int16_t prev_satellites = 0;
+  // uint8_t hour = 0;
+  // uint8_t minute = 0;
+  // uint8_t second = 0;
   bool isValid = false;
   bool isUpdated = false;
   bool fixAcquired = false;

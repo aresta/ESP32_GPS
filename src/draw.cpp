@@ -59,7 +59,7 @@ void draw( ViewPort& viewPort, MemCache& memCache)
   Polygon new_polygon;
   tft.fillScreen( BACKGROUND_COLOR);
   uint32_t total_time = millis();
-  log_d("Draw start %i", total_time);
+  log_v("Draw start %i", total_time);
   int16_t p1x, p1y, p2x, p2y;
   for( MapBlock* mblock: memCache.blocks){
     uint32_t block_time = millis();
@@ -88,7 +88,7 @@ void draw( ViewPort& viewPort, MemCache& memCache)
       fill_polygon( new_polygon);
       
     }
-    log_d("Block polygons done %i ms", millis()-block_time);
+    log_v("Block polygons done %i ms", millis()-block_time);
     block_time = millis();
     
     ////// Lines
@@ -108,9 +108,9 @@ void draw( ViewPort& viewPort, MemCache& memCache)
           line.width/zoom_level ?: 1, line.color, line.color);
       }
     }
-    log_d("Block lines done %i ms", millis()-block_time);
+    log_v("Block lines done %i ms", millis()-block_time);
   }
-  log_d("Total %i ms", millis()-total_time);
+  log_v("Total %i ms", millis()-total_time);
 
 
   // TODO: paint only in NAV mode
@@ -119,7 +119,7 @@ void draw( ViewPort& viewPort, MemCache& memCache)
     SCREEN_WIDTH/2 + 4, SCREEN_HEIGHT/2 + 5, 
     SCREEN_WIDTH/2,   SCREEN_HEIGHT/2 - 6, 
     RED);
-  log_d("Draw done! %i", millis());
+  log_v("Draw done! %i", millis());
 }
 
 void stats( ViewPort& viewPort, MapBlock& mblock)

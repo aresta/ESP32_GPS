@@ -58,6 +58,7 @@ void setup()
 
   log_i("Waiting for satellites...");
   serialGPS.println("$PMTK225,0*2B"); // set 'full on' mode
+
   // stats(viewPort, mmap);
   // printFreeMem();
 
@@ -105,7 +106,6 @@ void check_buttons()
     lastDebounceTime = millis();
     menu_btn_pressed = true;
   }
-
 }
 
 void loop()
@@ -114,7 +114,6 @@ void loop()
     getPosition();
     if( gps_coord.isValid){
       display_pos = gps_coord.getPoint32();
-      log_d("Reception! Fix?:%i, Sats:%i, isUpdated:%i", gps_coord.fixAcquired, gps_coord.satellites, gps_coord.isUpdated);
       if( gps_coord.isUpdated){
         refresh_display();
       }
@@ -128,9 +127,8 @@ void loop()
   switch( mode){
     case DEVMODE_NAV:
       getPosition();
-      if( gps_coord.isValid && gps_coord.isUpdated && gps_coord.fixAcquired){
+      if( gps_coord.isValid && gps_coord.isUpdated){
         display_pos = gps_coord.getPoint32();  // center display in gps coord
-        log_i("Pos Updated");
         refresh_display();
       }
       if( select_btn_pressed) mode = DEVMODE_MOVE;
