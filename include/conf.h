@@ -6,6 +6,9 @@
 #define PIXEL_SIZE_DEF 2  // in meters
 #define MAX_ZOOM 7
 
+#define VIEWBUFFER_WIDTH (SCREEN_WIDTH * 1)
+#define VIEWBUFFER_HEIGHT (SCREEN_HEIGHT * 1)
+
 // Buttons GPIO nums
 #define UP_BUTTON 16
 #define DOWN_BUTTON 15

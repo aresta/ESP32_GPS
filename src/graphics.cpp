@@ -51,45 +51,45 @@ bool BBox::intersects( BBox b){
 
 void header_msg( String msg)
 {
-  tft.fillRect(0, 0, 240, 25, YELLOWCLEAR);
-  tft.setCursor(5,5,2);
-  tft.print( msg);
+  spr.fillRect(0, 0, 240, 25, YELLOWCLEAR);
+  spr.setCursor(5,5,2);
+  spr.print( msg);
 }
 
 void tft_header()
 {
   if( gps_coord.fixAcquired){
-    tft.fillRect(0, 0, 240, 30, YELLOWCLEAR);
-    tft.setCursor(2,5,4);
-    tft.print( gps_coord.lng, 4);
-    tft.print(","); tft.print( gps_coord.lat, 4);
+    spr.fillRect(0, 0, 240, 30, YELLOWCLEAR);
+    spr.setCursor(2,5,4);
+    spr.print( gps_coord.lng, 4);
+    spr.print(","); spr.print( gps_coord.lat, 4);
   } else {
-    tft.fillRect(0, 0, 240, 30, ORANGE);
-    tft.setCursor(2,5,2);
-    tft.print("Waiting for sats");
+    spr.fillRect(0, 0, 240, 30, ORANGE);
+    spr.setCursor(2,5,2);
+    spr.print("Waiting for sats");
   }
-  tft.setCursor(185,7,2);
-  tft.print("Sats: "); tft.print( gps_coord.satellites);
+  spr.setCursor(185,7,2);
+  spr.print("Sats: "); spr.print( gps_coord.satellites);
 }
 
 void tft_footer()
 {
-  tft.fillRect(0, 290, 240, 320, CYAN);
-  tft.setCursor(2,295,4);
+  spr.fillRect(0, 290, 240, 320, CYAN);
+  spr.setCursor(2,295,4);
   switch ( mode){
-    case DEVMODE_NAV:  tft.print("Nav"); break;
-    case DEVMODE_MOVE: tft.print("Move"); break;
-    case DEVMODE_ZOOM: tft.print("Zoom"); break;  
+    case DEVMODE_NAV:  spr.print("Nav"); break;
+    case DEVMODE_MOVE: spr.print("Move"); break;
+    case DEVMODE_ZOOM: spr.print("Zoom"); break;  
   }
-  tft.setCursor(130,295,4);
-  tft.print("Zoom: "); tft.print( zoom_level);
+  spr.setCursor(130,295,4);
+  spr.print("Zoom: "); spr.print( zoom_level);
 }
 
 void tft_msg( const char *msg)
 {
-  tft.fillRect(0, 0, 240, 25, BLACK); // Clear with the background color
-  tft.fillRect(0, 0, 240, 25, CYAN);
-  tft.setCursor(5,5,2);
+  tft.fillRect(0, 0, 240, 50, BLACK); // Clear with the background color
+  tft.fillRect(0, 0, 240, 50, ORANGE);
+  tft.setCursor(10,10,4);
   tft.print( msg);
 }
 
@@ -103,7 +103,7 @@ void refresh_display()
   draw( viewPort, memCache);
   tft_header();
   tft_footer();
-  // delay( 10);
+  spr.pushSprite(0,0);
 }
 
 

@@ -36,13 +36,13 @@ void getPosition()
     gps_coord.isUpdated = false;
 
     gps_coord.lat = gps.location.lat();
-    if( abs( gps_coord.prev_lat - gps_coord.lat) > 0.00002){
+    if( abs( gps_coord.prev_lat - gps_coord.lat) > 0.0002){
       log_d("prev_lat:%f, lat:%f", gps_coord.prev_lat, gps_coord.lat);
       gps_coord.prev_lat = gps_coord.lat;
       gps_coord.isUpdated = true;
     }
     gps_coord.lng = gps.location.lng();
-    if( abs( gps_coord.prev_lng - gps_coord.lng) > 0.00002){
+    if( abs( gps_coord.prev_lng - gps_coord.lng) > 0.0002){
       log_d("prev_lng:%f, lng:%f", gps_coord.prev_lng, gps_coord.lng);
       gps_coord.prev_lng = gps_coord.lng;
       gps_coord.isUpdated = true;

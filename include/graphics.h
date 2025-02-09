@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 extern TFT_eSPI tft;
+extern TFT_eSprite spr;
 
 /// @brief Point in 16 bits projected coordinates (x,y) 
 struct Point16 {

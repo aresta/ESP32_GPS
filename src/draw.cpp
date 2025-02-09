@@ -48,7 +48,7 @@ void fill_polygon( Polygon p) // scanline fill algorithm
       if( nodeX[i+1] < 0 ) continue;
       if (nodeX[i] < 0 ) nodeX[i] = 0;
       if (nodeX[i+1] > SCREEN_WIDTH) nodeX[i+1] = SCREEN_WIDTH;
-      tft.drawLine( nodeX[i], SCREEN_HEIGHT - pixelY, nodeX[i+1], SCREEN_HEIGHT - pixelY, p.color);
+      spr.drawLine( nodeX[i], SCREEN_HEIGHT - pixelY, nodeX[i+1], SCREEN_HEIGHT - pixelY, p.color);
     }
   }
 }
@@ -57,7 +57,7 @@ void fill_polygon( Polygon p) // scanline fill algorithm
 void draw( ViewPort& viewPort, MemCache& memCache)
 {
   Polygon new_polygon;
-  tft.fillScreen( BACKGROUND_COLOR);
+  spr.fillScreen( BACKGROUND_COLOR);
   uint32_t total_time = millis();
   log_v("Draw start %i", total_time);
   int16_t p1x, p1y, p2x, p2y;
@@ -102,7 +102,7 @@ void draw( ViewPort& viewPort, MemCache& memCache)
         p1y = toScreenCoord_Y( line.points[i].y, screen_center_mc.y); 
         p2x = toScreenCoord_X( line.points[i+1].x, screen_center_mc.x); 
         p2y = toScreenCoord_Y( line.points[i+1].y, screen_center_mc.y); 
-        tft.drawWideLine(
+        spr.drawWideLine(
           p1x, SCREEN_HEIGHT - p1y,
           p2x, SCREEN_HEIGHT - p2y,
           line.width/zoom_level ?: 1, line.color, line.color);
@@ -114,7 +114,7 @@ void draw( ViewPort& viewPort, MemCache& memCache)
 
 
   // TODO: paint only in NAV mode
-  tft.fillTriangle(
+  spr.fillTriangle(
     SCREEN_WIDTH/2 - 4, SCREEN_HEIGHT/2 + 5, 
     SCREEN_WIDTH/2 + 4, SCREEN_HEIGHT/2 + 5, 
     SCREEN_WIDTH/2,   SCREEN_HEIGHT/2 - 6, 

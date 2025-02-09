@@ -6,6 +6,7 @@
 #include "env.h"
 
 TFT_eSPI tft = TFT_eSPI();
+TFT_eSprite spr = TFT_eSprite(&tft);
 HardwareSerial serialGPS(1);
 ViewPort viewPort;
 uint8_t zoom_level = PIXEL_SIZE_DEF; // zoom_level = 1 corresponds aprox to 1 meter / pixel
@@ -49,8 +50,12 @@ void setup()
   tft.invertDisplay( true);
   tft.fillScreen( CYAN);
   tft.setTextColor(TFT_BLACK);
+  spr.createSprite( VIEWBUFFER_WIDTH, VIEWBUFFER_HEIGHT);
+  spr.fillScreen( CYAN);
+  spr.setTextColor(TFT_BLACK);
+
   tft_msg("Initializing...");
-  log_i("Initializing...");
+  log_i("Opening SD Card...");
   if(!init_sd_card()) {
     tft_msg("Error: SD Card Mount Failed!");
     while(true);
@@ -67,7 +72,9 @@ void setup()
   esp_sleep_enable_gpio_wakeup();
 
   display_pos = Point32( INIT_POS);  // TODO: get last position from flash memory
+
   refresh_display();
+  spr.pushSprite(0,0); // work around. For some reason first pushSprite doesn't work
 }
 
 bool select_btn_pressed = false;
