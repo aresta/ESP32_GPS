@@ -95,7 +95,8 @@ struct MapBlock;
 struct Coord;
 
 void draw( ViewPort& viewPort, MemCache& memCache);
-int16_t toScreenCoord( const int32_t pxy, const int32_t screen_centerxy);
+int16_t toScreenCoord_X( const int32_t pxy, const int32_t screen_centerxy);
+int16_t toScreenCoord_Y( const int32_t pxy, const int32_t screen_centerxy);
 // std::vector<Point16> clip_polygon( BBox& bbox, std::vector<Point16>&  points);
 void stats( ViewPort& viewPort, MapBlock& mblock);
 void header_msg( String msg);

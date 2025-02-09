@@ -154,7 +154,7 @@ void loop()
     case DEVMODE_LOWPOW: // TODO
       digitalWrite( TFT_BLK_PIN, LOW);
       // sleep...
-      esp_sleep_enable_timer_wakeup( 20 * 1000000);
+      // esp_sleep_enable_timer_wakeup( 20 * 1000000);
       serialGPS.println("$PMTK161,0*28"); // enter standby Mode
       // serialGPS.println("$PMTK225,8*23"); // set 'Alwayslocate' mode
       log_i("esp_light_sleep_start");
@@ -163,10 +163,8 @@ void loop()
 
       // wakeup_reason = esp_sleep_get_wakeup_cause();
       serialGPS.println("$PMTK225,0*2B"); // back to 'full on' mode
-      if( menu_btn_pressed){
-        mode = DEVMODE_NAV;
-        digitalWrite( TFT_BLK_PIN, HIGH);
-      }
+      mode = DEVMODE_NAV;
+      digitalWrite( TFT_BLK_PIN, HIGH);
       delay(400); // debounce button
       break;
   }

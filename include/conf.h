@@ -7,10 +7,10 @@
 #define MAX_ZOOM 7
 
 // Buttons GPIO nums
-#define UP_BUTTON 03
-#define DOWN_BUTTON 04
-#define LEFT_BUTTON 15
-#define RIGHT_BUTTON 16
+#define UP_BUTTON 16
+#define DOWN_BUTTON 15
+#define LEFT_BUTTON 03
+#define RIGHT_BUTTON 04
 #define SELECT_BUTTON 07
 #define MENU_BUTTON 5
 #define TFT_BLK_PIN 21

@@ -74,16 +74,16 @@ void draw( ViewPort& viewPort, MemCache& memCache)
       if( zoom_level > polygon.maxzoom) continue;
       if( !polygon.bbox.intersects( screen_bbox_mc)) continue;
       new_polygon.color = polygon.color;
-      new_polygon.bbox.min.x = toScreenCoord( polygon.bbox.min.x, screen_center_mc.x);
-      new_polygon.bbox.min.y = toScreenCoord( polygon.bbox.min.y, screen_center_mc.y);
-      new_polygon.bbox.max.x = toScreenCoord( polygon.bbox.max.x, screen_center_mc.x);
-      new_polygon.bbox.max.y = toScreenCoord( polygon.bbox.max.y, screen_center_mc.y);
+      new_polygon.bbox.min.x = toScreenCoord_X( polygon.bbox.min.x, screen_center_mc.x);
+      new_polygon.bbox.min.y = toScreenCoord_Y( polygon.bbox.min.y, screen_center_mc.y);
+      new_polygon.bbox.max.x = toScreenCoord_X( polygon.bbox.max.x, screen_center_mc.x);
+      new_polygon.bbox.max.y = toScreenCoord_Y( polygon.bbox.max.y, screen_center_mc.y);
       
       new_polygon.points.clear();
       for( Point16 p : polygon.points){ // TODO: move to fill_polygon
         new_polygon.points.push_back( Point16(
-          toScreenCoord( p.x, screen_center_mc.x),
-          toScreenCoord( p.y, screen_center_mc.y)));
+          toScreenCoord_X( p.x, screen_center_mc.x),
+          toScreenCoord_Y( p.y, screen_center_mc.y)));
       }
       fill_polygon( new_polygon);
       
@@ -98,10 +98,10 @@ void draw( ViewPort& viewPort, MemCache& memCache)
 
       p1x = -1;
       for( int i=0; i < line.points.size() - 1; i++) {  //TODO optimize
-        p1x = toScreenCoord( line.points[i].x, screen_center_mc.x); 
-        p1y = toScreenCoord( line.points[i].y, screen_center_mc.y); 
-        p2x = toScreenCoord( line.points[i+1].x, screen_center_mc.x); 
-        p2y = toScreenCoord( line.points[i+1].y, screen_center_mc.y); 
+        p1x = toScreenCoord_X( line.points[i].x, screen_center_mc.x); 
+        p1y = toScreenCoord_Y( line.points[i].y, screen_center_mc.y); 
+        p2x = toScreenCoord_X( line.points[i+1].x, screen_center_mc.x); 
+        p2y = toScreenCoord_Y( line.points[i+1].y, screen_center_mc.y); 
         tft.drawWideLine(
           p1x, SCREEN_HEIGHT - p1y,
           p2x, SCREEN_HEIGHT - p2y,

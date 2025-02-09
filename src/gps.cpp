@@ -9,8 +9,8 @@ TinyGPSPlus gps;
 extern HardwareSerial serialGPS;
 extern Coord gps_coord;
 
-#define DEG2RAD(a) ((a) / (180 / M_PI))
-#define RAD2DEG(a) ((a) * (180 / M_PI))
+#define DEG2RAD(a) ((a) / (180.0 / M_PI))
+#define RAD2DEG(a) ((a) * (180.0 / M_PI))
 #define EARTH_RADIUS 6378137
 double lat2y(double lat) { return log(tan( DEG2RAD(lat) / 2 + M_PI/4 )) * EARTH_RADIUS; }
 double lon2x(double lon) { return DEG2RAD(lon) * EARTH_RADIUS; }
@@ -24,25 +24,25 @@ void getPosition()
   while( serialGPS.available() > 0){
     char c = serialGPS.read();
     gps.encode(c);
-    if( c == '\n'){
-      log_d("%s", msg.c_str());
-      msg.clear();
-    } else if( c != '\r'){
-      msg += c;
-    }    
+    // if( c == '\n'){
+    //   log_d("%s", msg.c_str());
+    //   msg.clear();
+    // } else if( c != '\r'){
+    //   msg += c;
+    // }    
   }
   if( gps.location.isValid()){
     gps_coord.isValid = true;
     gps_coord.isUpdated = false;
 
     gps_coord.lat = gps.location.lat();
-    if( abs( gps_coord.prev_lat - gps_coord.lat) > 0.0002){
+    if( abs( gps_coord.prev_lat - gps_coord.lat) > 0.00002){
       log_d("prev_lat:%f, lat:%f", gps_coord.prev_lat, gps_coord.lat);
       gps_coord.prev_lat = gps_coord.lat;
       gps_coord.isUpdated = true;
     }
     gps_coord.lng = gps.location.lng();
-    if( abs( gps_coord.prev_lng - gps_coord.lng) > 0.0002){
+    if( abs( gps_coord.prev_lng - gps_coord.lng) > 0.00002){
       log_d("prev_lng:%f, lng:%f", gps_coord.prev_lng, gps_coord.lng);
       gps_coord.prev_lng = gps_coord.lng;
       gps_coord.isUpdated = true;
