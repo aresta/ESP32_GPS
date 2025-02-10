@@ -65,7 +65,7 @@ void tft_header()
     spr.print(","); spr.print( gps_coord.lat, 4);
   } else {
     spr.fillRect(0, 0, 240, 30, ORANGE);
-    spr.setCursor(2,5,2);
+    spr.setCursor(2,5,4);
     spr.print("Waiting for sats");
   }
   spr.setCursor(185,7,2);
@@ -99,11 +99,17 @@ void refresh_display()
   log_d("lat:%f, lon:%f", gps_coord.lat, gps_coord.lng);
   log_d("Altitude: %i", gps_coord.altitude);
   viewPort.setCenter( display_pos);
+
+  setCpuFrequencyMhz(240); // back to full speed
   get_map_blocks( viewPort.bbox, memCache);
   draw( viewPort, memCache);
   tft_header();
   tft_footer();
+  
+  tft.writecommand(0x00); // Send a dummy command. Otherwise sometimes it doesn't refresh (?)
   spr.pushSprite(0,0);
+  log_d("pushSprite done \n");
+  setCpuFrequencyMhz(40); // reduce freq to save power
 }
 
 

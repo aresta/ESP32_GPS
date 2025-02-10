@@ -24,16 +24,17 @@ void getPosition()
   while( serialGPS.available() > 0){
     char c = serialGPS.read();
     gps.encode(c);
-    // if( c == '\n'){
-    //   log_d("%s", msg.c_str());
-    //   msg.clear();
-    // } else if( c != '\r'){
-    //   msg += c;
-    // }    
+    
+    // debug
+    if( c == '\n'){
+      log_d("%s", msg.c_str());
+      msg.clear();
+    } else if( c != '\r'){
+      msg += c;
+    }    
   }
   if( gps.location.isValid()){
     gps_coord.isValid = true;
-    gps_coord.isUpdated = false;
 
     gps_coord.lat = gps.location.lat();
     if( abs( gps_coord.prev_lat - gps_coord.lat) > 0.0002){
@@ -65,11 +66,13 @@ void getPosition()
     // gps_coord.second = gps.time.second();
     if( gps_coord.satellites >= 4){
       if( !gps_coord.fixAcquired){
+        gps_coord.fixAcquired = true;
+        gps_coord.isUpdated = true;
         log_d("Fix Acquired! Sats: %i", gps_coord.satellites);
       }
-      gps_coord.fixAcquired = true;
     } else if( gps_coord.satellites <= 3){
       gps_coord.fixAcquired = false;
+      gps_coord.isUpdated = true;
       log_d("No fix! Sats: %i", gps_coord.satellites);
     }
   } else {

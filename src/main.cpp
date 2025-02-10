@@ -4,6 +4,9 @@
 #include "graphics.h"
 #include "conf.h"
 #include "env.h"
+#include <WiFi.h>
+#include "esp_bt.h"
+#include "esp_cpu.h"
 
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite spr = TFT_eSprite(&tft);
@@ -32,18 +35,21 @@ void setup()
   pinMode( SELECT_BUTTON, INPUT_PULLUP);
   pinMode( MENU_BUTTON, INPUT_PULLUP);
   pinMode( TFT_BLK_PIN, OUTPUT);
-  // pinMode( GPS_CE, OUTPUT);
-  digitalWrite( TFT_BLK_PIN, LOW); // switch off display
-
+  ledcSetup(0, 5000, 8);  // Set up PWM for TFT BLK
+  ledcAttachPin( TFT_BLK_PIN, 0); 
+  ledcWrite(0, 0);  // switch off display
+  
   Serial.begin(115200);
-  // delay(1000);
-  // printFreeMem();
   serialGPS.begin( 9600, SERIAL_8N1, GPS_TX, GPS_RX);
   delay(50);
+  
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF); // disable wifi & BT
+  btStop();
 
   digitalWrite( SD_CS_PIN, HIGH); // SD card chips select
   digitalWrite( TFT_CS, HIGH); // TFT chip select
-  digitalWrite( TFT_BLK_PIN, HIGH);
+  ledcWrite(0, 128); // set display 50%
 
   tft.init();
   tft.setRotation(0);  // portrait
@@ -62,19 +68,22 @@ void setup()
   }
 
   log_i("Waiting for satellites...");
-  serialGPS.println("$PMTK225,0*2B"); // set 'full on' mode
+  // serialGPS.println("$PMTK225,0*2B"); // set 'full on' mode
+  serialGPS.println("$PMTK225,2,300,1000*1F"); // enable Periodic Mode (1-second interval, 300ms on-time)
+  // serialGPS.println("$PMTK225,8*23"); // set 'Alwayslocate' mode
+
+  // disable extra NMEA sentences. Only enables the $GPGGA sentence (position data)
+  serialGPS.println("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29");
 
   // stats(viewPort, mmap);
   // printFreeMem();
 
-  // digitalWrite( GPS_CE, HIGH); // GPS low power mode disabled
-  gpio_wakeup_enable( (gpio_num_t )MENU_BUTTON, GPIO_INTR_LOW_LEVEL);
+  gpio_wakeup_enable((gpio_num_t )MENU_BUTTON, GPIO_INTR_LOW_LEVEL);
   esp_sleep_enable_gpio_wakeup();
 
   display_pos = Point32( INIT_POS);  // TODO: get last position from flash memory
 
   refresh_display();
-  spr.pushSprite(0,0); // work around. For some reason first pushSprite doesn't work
 }
 
 bool select_btn_pressed = false;
@@ -117,28 +126,26 @@ void check_buttons()
 
 void loop()
 {
-  if( !gps_coord.fixAcquired){
-    getPosition();
-    if( gps_coord.isValid){
-      display_pos = gps_coord.getPoint32();
-      if( gps_coord.isUpdated){
-        refresh_display();
-      }
-    } else{
-      delay(100); // TODO
-    }
-  }
-
   check_buttons();
   if( menu_btn_pressed) mode = DEVMODE_LOWPOW;
   switch( mode){
     case DEVMODE_NAV:
       getPosition();
       if( gps_coord.isValid && gps_coord.isUpdated){
+        log_d("XXXX Fix?:%i, Sats:%i, isUpdated:%i", gps_coord.fixAcquired, gps_coord.satellites, gps_coord.isUpdated);
         display_pos = gps_coord.getPoint32();  // center display in gps coord
         refresh_display();
+        gps_coord.isUpdated = false;
       }
-      if( select_btn_pressed) mode = DEVMODE_MOVE;
+      if( select_btn_pressed){
+        mode = DEVMODE_MOVE;
+      } else {
+        // esp_sleep_enable_timer_wakeup( 100 * 1000); // sleep some ms
+        // gpio_wakeup_enable((gpio_num_t )SELECT_BUTTON, GPIO_INTR_LOW_LEVEL);
+        // esp_light_sleep_start();
+        // esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+        // gpio_wakeup_disable((gpio_num_t )SELECT_BUTTON);
+      }
       break;
     
     case DEVMODE_MOVE:
@@ -159,19 +166,21 @@ void loop()
       break;
 
     case DEVMODE_LOWPOW: // TODO
-      digitalWrite( TFT_BLK_PIN, LOW);
+      ledcWrite(0, 0); // set display off
       // sleep...
       // esp_sleep_enable_timer_wakeup( 20 * 1000000);
-      serialGPS.println("$PMTK161,0*28"); // enter standby Mode
-      // serialGPS.println("$PMTK225,8*23"); // set 'Alwayslocate' mode
+      
+      // serialGPS.println("$PMTK161,0*28"); // enter standby Mode
+      serialGPS.println("$PMTK225,8*23"); // always locate mode
       log_i("esp_light_sleep_start");
       delay(400); // debounce button
       esp_light_sleep_start();
 
       // wakeup_reason = esp_sleep_get_wakeup_cause();
       serialGPS.println("$PMTK225,0*2B"); // back to 'full on' mode
+      // serialGPS.println("$PMTK225,8*23"); // set 'Alwayslocate' mode
       mode = DEVMODE_NAV;
-      digitalWrite( TFT_BLK_PIN, HIGH);
+      ledcWrite(0, 128); // set display 50%
       delay(400); // debounce button
       break;
   }
