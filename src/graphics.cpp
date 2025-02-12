@@ -58,16 +58,10 @@ void header_msg( String msg)
 
 void tft_header()
 {
-  if( gps_coord.fixAcquired){
-    spr.fillRect(0, 0, 240, 30, YELLOWCLEAR);
-    spr.setCursor(2,5,4);
-    spr.print( gps_coord.lng, 4);
-    spr.print(","); spr.print( gps_coord.lat, 4);
-  } else {
-    spr.fillRect(0, 0, 240, 30, ORANGE);
-    spr.setCursor(2,5,4);
-    spr.print("Waiting for sats");
-  }
+  spr.fillRect(0, 0, 240, 30, gps_coord.fixAcquired ? YELLOWCLEAR : ORANGE);
+  spr.setCursor(2,5,4);
+  spr.print( gps_coord.lng, 4);
+  spr.print(","); spr.print( gps_coord.lat, 4);
   spr.setCursor(185,7,2);
   spr.print("Sats: "); spr.print( gps_coord.satellites);
 }
