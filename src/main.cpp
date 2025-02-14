@@ -27,12 +27,12 @@ void setup()
   serialGPS.begin( 9600, SERIAL_8N1, GPS_TX, GPS_RX);
   delay(50);
 
-  init();
+  init(); // initialize GPIO's, display, power saving, etc
 
   log_i("Waiting for satellites...");
   // serialGPS.println("$PMTK225,0*2B"); // set 'full on' mode
-  serialGPS.println("$PMTK225,2,300,1000*1F"); // enable Periodic Mode (1-second interval, 300ms on-time)
-  // serialGPS.println("$PMTK225,8*23"); // set 'Alwayslocate' mode
+  // serialGPS.println("$PMTK225,2,300,1000*1F"); // enable Periodic Mode (1-second interval, 300ms on-time)
+  serialGPS.println("$PMTK225,8*23"); // set 'Alwayslocate' mode
 
   // disable extra NMEA sentences. Only enables the $GPGGA sentence (position data)
   serialGPS.println("$PMTK314,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0*29");
@@ -94,7 +94,7 @@ void loop()
       // serialGPS.println("$PMTK161,0*28"); // enter standby Mode
       serialGPS.println("$PMTK225,8*23"); // always locate mode
       log_i("esp_light_sleep_start");
-      delay(400); // debounce button
+      delay(200); // debounce button
       esp_light_sleep_start();
 
       // wakeup_reason = esp_sleep_get_wakeup_cause();
@@ -102,7 +102,6 @@ void loop()
       // serialGPS.println("$PMTK225,8*23"); // set 'Alwayslocate' mode
       mode = DEVMODE_NAV;
       ledcWrite(0, 128); // set display 50%
-      // delay(400); // debounce button
       refresh_display(); // Check if needed
       break;
   }

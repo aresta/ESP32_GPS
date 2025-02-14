@@ -37,13 +37,13 @@ void getPosition()
     gps_coord.isValid = true;
 
     gps_coord.lat = gps.location.lat();
-    if( abs( gps_coord.prev_lat - gps_coord.lat) > 0.0002){
+    if( abs( gps_coord.prev_lat - gps_coord.lat) > 0.0001){
       log_d("prev_lat:%f, lat:%f", gps_coord.prev_lat, gps_coord.lat);
       gps_coord.prev_lat = gps_coord.lat;
       gps_coord.isUpdated = true;
     }
     gps_coord.lng = gps.location.lng();
-    if( abs( gps_coord.prev_lng - gps_coord.lng) > 0.0002){
+    if( abs( gps_coord.prev_lng - gps_coord.lng) > 0.0001){
       log_d("prev_lng:%f, lng:%f", gps_coord.prev_lng, gps_coord.lng);
       gps_coord.prev_lng = gps_coord.lng;
       gps_coord.isUpdated = true;
@@ -55,7 +55,7 @@ void getPosition()
       gps_coord.isUpdated = true;
     }
     gps_coord.altitude = static_cast<int16_t>(gps.altitude.meters());
-    if( abs( gps_coord.prev_altitude != gps_coord.altitude) > 4){
+    if( abs( gps_coord.prev_altitude - gps_coord.altitude) > 4){
       log_d("prev_alt:%i, alt:%i", gps_coord.prev_altitude, gps_coord.altitude);
       gps_coord.prev_altitude = gps_coord.altitude;
       gps_coord.isUpdated = true;
