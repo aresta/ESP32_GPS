@@ -13,54 +13,51 @@ void fill_polygon( Polygon p) // scanline fill algorithm
 
   if( maxy >= SCREEN_HEIGHT) maxy = SCREEN_HEIGHT-1;
   if( miny < 0) miny = 0;
-  if(miny >= maxy){
-    return;
-  }
-  int16_t nodeX[p.points.size()], pixelY;
+  if(miny >= maxy) return;
+  
+  std::vector<int16_t> nodeX;
+  nodeX.reserve(p.points.size());
 
   //  Loop through the rows of the image.
   int16_t nodes, i , swap;
-  for( pixelY=miny; pixelY <= maxy; pixelY++) {  //  Build a list of nodes.    
+  for( int16_t pixelY=miny; pixelY <= maxy; pixelY++) {  //  Build a list of nodes.    
+    nodeX.clear();
     nodes=0;
     for( int i=0; i < (p.points.size() - 1); i++) {
       if( (p.points[i].y < pixelY && p.points[i+1].y >= pixelY) ||
         (p.points[i].y >= pixelY && p.points[i+1].y < pixelY)) {
-          nodeX[nodes++] = 
-            p.points[i].x + double(pixelY-p.points[i].y)/double(p.points[i+1].y-p.points[i].y) * 
-            double(p.points[i+1].x-p.points[i].x);
+          int16_t intersectX = p.points[i].x + 
+            (int16_t)((double(pixelY - p.points[i].y) / double(p.points[i+1].y - p.points[i].y)) *
+            (p.points[i+1].x - p.points[i].x));
+          nodeX.push_back(intersectX);
+          nodes++;
         }
     }
-    assert( nodes < p.points.size());
 
-    //  Sort the nodes, via a simple “Bubble” sort.
-    i=0;
-    while( i < nodes-1) {   // TODO: rework
-      if( nodeX[i] > nodeX[i+1]) {
-        swap=nodeX[i]; nodeX[i]=nodeX[i+1]; nodeX[i+1]=swap; 
-        i=0;  
-      }
-      else { i++; }
-    }
+    // Sort intersections.
+    std::sort(nodeX.begin(), nodeX.end());
 
     //  Fill the pixels between node pairs.
     for (i=0; i <= nodes-2; i+=2) {
       if( nodeX[i] > SCREEN_WIDTH) break;
       if( nodeX[i+1] < 0 ) continue;
-      if (nodeX[i] < 0 ) nodeX[i] = 0;
-      if (nodeX[i+1] > SCREEN_WIDTH) nodeX[i+1] = SCREEN_WIDTH;
-      spr.drawLine( nodeX[i], SCREEN_HEIGHT - pixelY, nodeX[i+1], SCREEN_HEIGHT - pixelY, p.color);
+      
+      int16_t startX = (nodeX[i] < 0) ? 0 : nodeX[i];
+      int16_t endX = (nodeX[i+1] > SCREEN_WIDTH) ? SCREEN_WIDTH : nodeX[i+1];
+      spr.drawLine(startX, SCREEN_HEIGHT - pixelY, endX, SCREEN_HEIGHT - pixelY, p.color);
     }
   }
 }
 
-
+/// @brief Draw to the display the map visible in the viewPort area
+/// @param viewPort area to be drawn
+/// @param memCache map blocks in memory
 void draw( ViewPort& viewPort, MemCache& memCache)
 {
   Polygon new_polygon;
   spr.fillScreen( BACKGROUND_COLOR);
   uint32_t total_time = millis();
   log_v("Draw start %i", total_time);
-  int16_t p1x, p1y, p2x, p2y;
   for( MapBlock* mblock: memCache.blocks){
     uint32_t block_time = millis();
     if( !mblock->inView) continue;
@@ -69,21 +66,21 @@ void draw( ViewPort& viewPort, MemCache& memCache)
     Point16 screen_center_mc = viewPort.center.toPoint16() - mblock->offset.toPoint16();  // screen center with features coordinates
     BBox screen_bbox_mc = viewPort.bbox - mblock->offset;  // screen boundaries with features coordinates
     
+    Point16 offset(
+      SCREEN_WIDTH / 2 - (screen_center_mc.x / zoom_level),
+      SCREEN_HEIGHT / 2 - (screen_center_mc.y / zoom_level));
+
     ////// Polygons 
     for( Polygon polygon : mblock->polygons){
       if( zoom_level > polygon.maxzoom) continue;
       if( !polygon.bbox.intersects( screen_bbox_mc)) continue;
       new_polygon.color = polygon.color;
-      new_polygon.bbox.min.x = toScreenCoord_X( polygon.bbox.min.x, screen_center_mc.x);
-      new_polygon.bbox.min.y = toScreenCoord_Y( polygon.bbox.min.y, screen_center_mc.y);
-      new_polygon.bbox.max.x = toScreenCoord_X( polygon.bbox.max.x, screen_center_mc.x);
-      new_polygon.bbox.max.y = toScreenCoord_Y( polygon.bbox.max.y, screen_center_mc.y);
+      new_polygon.bbox.min = (polygon.bbox.min / zoom_level) + offset;
+      new_polygon.bbox.max = (polygon.bbox.max / zoom_level) + offset;
       
       new_polygon.points.clear();
       for( Point16 p : polygon.points){ // TODO: move to fill_polygon
-        new_polygon.points.push_back( Point16(
-          toScreenCoord_X( p.x, screen_center_mc.x),
-          toScreenCoord_Y( p.y, screen_center_mc.y)));
+        new_polygon.points.push_back( p.toScreenCoord( zoom_level, offset));
       }
       fill_polygon( new_polygon);
       
@@ -96,16 +93,13 @@ void draw( ViewPort& viewPort, MemCache& memCache)
       if( zoom_level > line.maxzoom) continue;
       if( !line.bbox.intersects( screen_bbox_mc)) continue;
 
-      p1x = -1;
       for( int i=0; i < line.points.size() - 1; i++) {  //TODO optimize
-        p1x = toScreenCoord_X( line.points[i].x, screen_center_mc.x); 
-        p1y = toScreenCoord_Y( line.points[i].y, screen_center_mc.y); 
-        p2x = toScreenCoord_X( line.points[i+1].x, screen_center_mc.x); 
-        p2y = toScreenCoord_Y( line.points[i+1].y, screen_center_mc.y); 
+        Point16 p1 = line.points[i].toScreenCoord( zoom_level, offset);
+        Point16 p2 = line.points[i+1].toScreenCoord( zoom_level, offset);
         spr.drawWideLine(
-          p1x, SCREEN_HEIGHT - p1y,
-          p2x, SCREEN_HEIGHT - p2y,
-          line.width/zoom_level ?: 1, line.color, line.color);
+          p1.x, SCREEN_HEIGHT - p1.y,
+          p2.x, SCREEN_HEIGHT - p2.y,
+          (line.width/zoom_level) ?: 1, line.color, line.color);
       }
     }
     log_v("Block lines done %i ms", millis()-block_time);

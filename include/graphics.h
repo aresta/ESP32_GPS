@@ -14,9 +14,11 @@ extern TFT_eSprite spr;
 struct Point16 {
   Point16(){};
   Point16( int16_t x, int16_t y) : x(x),y(y) {};
-  Point16 operator-(const Point16 p){ return Point16( x-p.x, y-p.y);};
-  Point16 operator+(const Point16 p){ return Point16( x+p.x, y+p.y);};
+  inline Point16 operator-(const Point16 &p){ return Point16( x-p.x, y-p.y);};
+  inline Point16 operator+(const Point16 &p){ return Point16( x+p.x, y+p.y);};
+  inline Point16 operator/(uint8_t factor) { return Point16(x / factor, y / factor);}
   Point16( char *coords_pair); // parse char array like:  11.222,333.44
+  inline Point16 toScreenCoord( uint8_t zoom, const Point16 &offset) { return (*this / zoom) + offset;}
   int16_t x;
   int16_t y;
 };
@@ -27,8 +29,9 @@ struct Point32 {
   Point32(){};
   Point32( int32_t x, int32_t y) : x(x),y(y) {};
   Point32( Point16 p): x(p.x), y(p.y) {};
-  Point32 operator-(const Point32 p){ return Point32( x-p.x, y-p.y);};
-  Point32 operator+(const Point32 p){ return Point32( x+p.x, y+p.y);};
+  inline Point32 operator-(const Point32 &p){ return Point32( x-p.x, y-p.y);};
+  inline Point32 operator+(const Point32 &p){ return Point32( x+p.x, y+p.y);};
+  inline Point32 operator/(uint8_t factor) { return Point32(x / factor, y / factor);}
   Point16 toPoint16(){ return Point16( x, y);}; // TODO: check limits
   bool operator==(const Point32 p){ return x==p.x && y==p.y; };
 
@@ -47,8 +50,8 @@ struct BBox {
   // @param min top left corner
   // @param max bottim right corner
   BBox( Point32 min, Point32 max): min(min), max(max) {};
-  BBox operator-(const Point32 p){ return BBox( min-p, max-p);};
-  bool contains_point(const Point32 p);
+  inline BBox operator-(const Point32 p){ return BBox( min-p, max-p);};
+  inline bool contains_point(const Point32 p){ return p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y; };
   bool intersects(const BBox b);
   Point32 min;
   Point32 max;
@@ -96,8 +99,6 @@ struct MapBlock;
 struct Coord;
 
 void draw( ViewPort& viewPort, MemCache& memCache);
-int16_t toScreenCoord_X( const int32_t pxy, const int32_t screen_centerxy);
-int16_t toScreenCoord_Y( const int32_t pxy, const int32_t screen_centerxy);
 // std::vector<Point16> clip_polygon( BBox& bbox, std::vector<Point16>&  points);
 void stats( ViewPort& viewPort, MapBlock& mblock);
 void header_msg( String msg);

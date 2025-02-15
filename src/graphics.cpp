@@ -21,16 +21,6 @@ void ViewPort::setCenter(Point32& pcenter) {
   bbox.max.y = pcenter.y + (SCREEN_HEIGHT * zoom_level) / 2;
 }
 
-int16_t toScreenCoord_X( const int32_t px, const int32_t screen_centerx) // work with primitives for performance
-{
-  return round((double )(px - screen_centerx) / zoom_level) + (double )SCREEN_WIDTH / 2;
-}
-
-int16_t toScreenCoord_Y( const int32_t py, const int32_t screen_centery) // work with primitives for performance
-{
-  return round((double )(py - screen_centery) / zoom_level) + (double )SCREEN_HEIGHT / 2;
-}
-
 
 Point16::Point16( char *coords_pair)
 {
@@ -39,7 +29,6 @@ Point16::Point16( char *coords_pair)
   y = (int16_t )round( strtod( ++next, NULL));  // 2nd coord
 }
 
-bool BBox::contains_point(const Point32 p){ return p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y; }
 
 bool BBox::intersects( BBox b){ 
   if( b.min.x > max.x || 
