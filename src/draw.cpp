@@ -58,12 +58,12 @@ void draw( ViewPort& viewPort, MemCache& memCache)
   spr.fillScreen( BACKGROUND_COLOR);
   uint32_t total_time = millis();
   log_v("Draw start %i", total_time);
-  for( MapBlock* mblock: memCache.blocks){
+  for( const MapBlock* mblock: memCache.blocks){
     uint32_t block_time = millis();
     if( !mblock->inView) continue;
 
     // block to draw
-    Point16 screen_center_mc = viewPort.center.toPoint16() - mblock->offset.toPoint16();  // screen center with features coordinates
+    Point16 screen_center_mc = (viewPort.center - mblock->offset).toPoint16();  // screen center with features coordinates
     BBox screen_bbox_mc = viewPort.bbox - mblock->offset;  // screen boundaries with features coordinates
     
     Point16 offset(
@@ -71,7 +71,7 @@ void draw( ViewPort& viewPort, MemCache& memCache)
       SCREEN_HEIGHT / 2 - (screen_center_mc.y / zoom_level));
 
     ////// Polygons 
-    for( Polygon polygon : mblock->polygons){
+    for( const Polygon polygon : mblock->polygons){
       if( zoom_level > polygon.maxzoom) continue;
       if( !polygon.bbox.intersects( screen_bbox_mc)) continue;
       new_polygon.color = polygon.color;
@@ -89,7 +89,7 @@ void draw( ViewPort& viewPort, MemCache& memCache)
     block_time = millis();
     
     ////// Lines
-    for( Polyline line : mblock->polylines){
+    for( const Polyline line : mblock->polylines){
       if( zoom_level > line.maxzoom) continue;
       if( !line.bbox.intersects( screen_bbox_mc)) continue;
 

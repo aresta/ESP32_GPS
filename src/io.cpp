@@ -65,7 +65,7 @@ void init()
 
 void check_buttons()
 {
-  const uint32_t debounceDelay = 100; // ms
+  const uint32_t debounceDelay = 150; // ms
   static uint32_t lastDebounceTime = 0;
   static uint32_t menu_button_press_start = 0; // ms 
   static uint16_t menu_button_long_delay = 800; // ms 

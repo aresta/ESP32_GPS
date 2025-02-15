@@ -30,7 +30,7 @@ Point16::Point16( char *coords_pair)
 }
 
 
-bool BBox::intersects( BBox b){ 
+bool BBox::intersects( BBox b) const{ 
   if( b.min.x > max.x || 
     b.max.x < min.x || 
     b.min.y > max.y || 
