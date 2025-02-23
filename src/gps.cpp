@@ -27,7 +27,7 @@ void getPosition()
     
     // debug
     if( c == '\n'){
-      log_d("%s", msg.c_str());
+      log_v("%s", msg.c_str());
       msg.clear();
     } else if( c != '\r'){
       msg += c;

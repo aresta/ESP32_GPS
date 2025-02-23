@@ -114,7 +114,7 @@ void parse_coords( ReadBufferingStream& file, std::vector<Point16>& points)
 
 MapBlock* read_map_block( String file_name)
 {
-  log_v("read_map_block: %s", file_name.c_str());
+  log_d("read_map_block: %s", file_name.c_str());
   char c;
   char str[30];
   MapBlock* mblock = new MapBlock();
@@ -244,7 +244,7 @@ MapBlock* read_map_block( String file_name)
 /// @param memCache map blocks in memory
 void get_map_blocks( BBox& bbox, MemCache& memCache)
 {
-  log_v("get_map_blocks %i", millis());
+  log_d("get_map_blocks %i", millis());
   for( MapBlock* block: memCache.blocks){
     block->inView = false;
   }
@@ -264,7 +264,7 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
     }
     if( found) continue;
     
-    log_v("load from disk (%i, %i) %i", block_min_x, block_min_y, millis());
+    log_d("load from disk (%i, %i) %i", block_min_x, block_min_y, millis());
     // block is not in memory => load from disk
     int32_t block_x = (block_min_x >> MAPBLOCK_SIZE_BITS) & MAPFOLDER_MASK;
     int32_t block_y = (block_min_y >> MAPBLOCK_SIZE_BITS) & MAPFOLDER_MASK;
@@ -277,11 +277,11 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
     // check if cache is full
     if( memCache.blocks.size() >= MAPBLOCKS_MAX){
       // remove first one, the oldest
-      log_v("Deleteing freeHeap: %i", esp_get_free_heap_size());
+      log_d("Deleteing freeHeap: %i", esp_get_free_heap_size());
       MapBlock* first_block = memCache.blocks.front();
       delete first_block; // free memory
       memCache.blocks.erase( memCache.blocks.begin()); // remove pointer from the vector
-      log_v("Deleted freeHeap: %i", esp_get_free_heap_size());
+      log_d("Deleted freeHeap: %i", esp_get_free_heap_size());
     }
 
     MapBlock* new_block = read_map_block( file_name);
@@ -290,11 +290,11 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
     memCache.blocks.push_back( new_block); // add the block to the memory cache
     assert( memCache.blocks.size() <= MAPBLOCKS_MAX);
 
-    log_v("Block readed from SD card: %p", new_block);
-    log_v("FreeHeap: %i", esp_get_free_heap_size());
+    log_d("Block readed from SD card: %p", new_block);
+    log_d("FreeHeap: %i", esp_get_free_heap_size());
   
   }   
-  log_v("memCache size: %i %i", memCache.blocks.size(), millis());
+  log_d("memCache size: %i %i", memCache.blocks.size(), millis());
 }
 
 

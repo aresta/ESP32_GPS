@@ -7,8 +7,8 @@
 #include "graphics.h"
 #include "maps.h"
 
-extern TFT_eSPI tft;
-extern TFT_eSprite spr;
+TFT_eSPI tft = TFT_eSPI();
+TFT_eSprite *spr[MAX_ZOOM+1]; // zoom goes from 1 to MAX_ZOOM
 
 extern bool select_btn_pressed;
 extern bool up_btn_pressed;
@@ -18,7 +18,7 @@ extern bool right_btn_pressed;
 extern bool menu_btn_short_pressed;
 extern bool menu_btn_long_pressed;
 
-void init()
+void init_io()
 {
   // Configure GPIO's
   pinMode( UP_BUTTON, INPUT_PULLUP);
@@ -31,6 +31,10 @@ void init()
   ledcSetup(0, 5000, 8);  // Set up PWM for TFT BLK
   ledcAttachPin( TFT_BLK_PIN, 0); 
   ledcWrite(0, 0);  // switch off display
+
+  // wake up from low power mode
+  gpio_wakeup_enable((gpio_num_t )MENU_BUTTON, GPIO_INTR_LOW_LEVEL);
+  esp_sleep_enable_gpio_wakeup();
 
   // disable wifi & BT to save power
   WiFi.disconnect(true);
@@ -47,20 +51,23 @@ void init()
   tft.invertDisplay( true);
   tft.fillScreen( CYAN);
   tft.setTextColor(TFT_BLACK);
-  spr.createSprite( VIEWBUFFER_WIDTH, VIEWBUFFER_HEIGHT);
-  spr.fillScreen( CYAN);
-  spr.setTextColor(TFT_BLACK);
+
+  // init sprites for each zoom level
+  for(int i = 1; i <= MAX_ZOOM; i++){  // 1st pointer not used
+    spr[i] = new TFT_eSprite(&tft);
+    spr[i]->createSprite( SCREEN_BUFFER_WIDTH, SCREEN_BUFFER_HEIGHT);
+    spr[i]->fillScreen(CYAN);
+    spr[i]->setTextColor(TFT_BLACK);
+    log_d("FreeHeap: %i", esp_get_free_heap_size());
+  }
 
   tft_msg("Initializing...");
   log_i("Opening SD Card...");
   if(!init_sd_card()) {
+    log_e("Error: SD Card Mount Failed!");
     tft_msg("Error: SD Card Mount Failed!");
     while(true);
   }
-
-  // wake up from low power mode
-  gpio_wakeup_enable((gpio_num_t )MENU_BUTTON, GPIO_INTR_LOW_LEVEL);
-  esp_sleep_enable_gpio_wakeup();
 }
 
 void check_buttons()

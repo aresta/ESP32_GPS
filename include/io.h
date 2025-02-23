@@ -1,4 +1,4 @@
 #pragma once
 
-void init();
+void init_io();
 void check_buttons();

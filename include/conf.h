@@ -1,13 +1,13 @@
 #pragma once
 
 // #define CORE_DEBUG_LEVEL 5 
-#define SCREEN_WIDTH 240  // tft.width()
-#define SCREEN_HEIGHT 320   // tft.height()
+#define SCREEN_WIDTH 240  
+#define SCREEN_HEIGHT 320   
+#define SCREEN_BUFFER_WIDTH (SCREEN_WIDTH * 1)
+#define SCREEN_BUFFER_HEIGHT (SCREEN_HEIGHT * 1)
 #define PIXEL_SIZE_DEF 2  // in meters
 #define MAX_ZOOM 7
 
-#define VIEWBUFFER_WIDTH (SCREEN_WIDTH * 1)
-#define VIEWBUFFER_HEIGHT (SCREEN_HEIGHT * 1)
 
 // Buttons GPIO nums
 #define UP_BUTTON 16

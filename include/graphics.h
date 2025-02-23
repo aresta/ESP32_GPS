@@ -8,7 +8,6 @@
 #include <stdint.h>
 
 extern TFT_eSPI tft;
-extern TFT_eSprite spr;
 
 struct Point16; // Forward declaration of Point16
 
@@ -23,8 +22,8 @@ struct PointBase {
   inline Derived operator-(const Derived &p) const { return Derived(x - p.x, y - p.y); }
   inline Derived operator/(uint8_t factor) const { return Derived(x / factor, y / factor); }
   inline Derived operator*(uint8_t factor) const { return Derived(x * factor, y * factor); }
-  inline Point16 toScreenCoord(uint8_t zoom, const Point16 &offset) const;
   inline bool operator==(const Derived p){ return x==p.x && y==p.y; };
+  inline Derived toScreenCoord(uint8_t zoom, const Derived &offset) const { return (*this / zoom) + offset;};
 };
 
 
@@ -43,10 +42,6 @@ struct Point32 : public PointBase<Point32, int32_t>{
   Point16 toPoint16(){ return Point16( x, y);}; // TODO: check limits
 };
 
-template<typename Derived, typename T>
-inline Point16 PointBase<Derived, T>::toScreenCoord(uint8_t zoom, const Point16 &offset) const { 
-  return (*this / zoom) + offset;
-}
 
 // @brief Bounding Box
 struct BBox {
@@ -55,8 +50,9 @@ struct BBox {
   // @param min top left corner
   // @param max bottim right corner
   BBox( Point32 min, Point32 max): min(min), max(max) {};
-  inline BBox operator-(const Point32 p){ return BBox( min-p, max-p);};
-  inline bool contains_point(const Point32 p){ return p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y; };
+  inline BBox operator-(const Point32 p) const { return BBox( min-p, max-p);};
+  inline bool contains_point(const Point32 p) const { return p.x >= min.x && p.x <= max.x && p.y >= min.y && p.y <= max.y;};
+  inline bool contained_in(const BBox b) const{ return b.contains_point( min) && b.contains_point( max);};
   bool intersects(const BBox b) const;
   Point32 min;
   Point32 max;
@@ -81,8 +77,8 @@ struct Polygon {
 };
 
 
-struct ViewPort {
-  void setCenter(Point32& pcenter);
+struct ViewArea {
+  void setCenter(Point32& pcenter, int16_t width, int16_t eight);
   Point32 center;
   BBox bbox;
 };
@@ -94,8 +90,8 @@ struct MemCache; // forward declarations
 struct MapBlock;
 struct Coord;
 
-void draw( ViewPort& viewPort, MemCache& memCache);
-void stats( ViewPort& viewPort, MapBlock& mblock);
+void draw( ViewArea& viewArea, MemCache& memCache, TFT_eSprite *spr);
+void stats( ViewArea& viewArea, MapBlock& mblock);
 void header_msg( String msg);
 
 void tft_msg( const char *msg);

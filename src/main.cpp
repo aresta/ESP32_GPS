@@ -4,13 +4,16 @@
 #include "conf.h"
 #include "env.h"
 
-TFT_eSPI tft = TFT_eSPI();
-TFT_eSprite spr = TFT_eSprite(&tft);
 HardwareSerial serialGPS(1);
-ViewPort viewPort;
 uint8_t zoom_level = PIXEL_SIZE_DEF; // zoom_level = 1 corresponds aprox to 1 meter / pixel
 Coord gps_coord;
-Point32 display_pos;
+
+/**
+ * @brief GPS position in world coordinates.
+ * 
+ */
+Point32 gps_pos_wc;
+
 uint8_t mode = DEVMODE_NAV;
 
 bool select_btn_pressed = false;
@@ -22,12 +25,13 @@ bool menu_btn_short_pressed = false;
 bool menu_btn_long_pressed = false;
 
 void setup()
-{ 
+{
+  log_i("Starting..."); 
   Serial.begin(115200);
   serialGPS.begin( 9600, SERIAL_8N1, GPS_TX, GPS_RX);
   delay(50);
 
-  init(); // initialize GPIO's, display, power saving, etc
+  init_io(); // initialize GPIO's, display, power saving, etc
 
   log_i("Waiting for satellites...");
   // serialGPS.println("$PMTK225,0*2B"); // set 'full on' mode
@@ -37,10 +41,7 @@ void setup()
   // disable extra NMEA sentences. Only enables the $GPGGA sentence (position data)
   serialGPS.println("$PMTK314,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0*29");
 
-  // stats(viewPort, mmap);
-  // printFreeMem();
-
-  display_pos = Point32( INIT_POS);  // TODO: get last position from flash memory
+  gps_pos_wc = Point32( INIT_POS);  // TODO: get last position from flash memory
 
   refresh_display();
 }
@@ -54,7 +55,7 @@ void loop()
       getPosition();
       if( gps_coord.isValid && gps_coord.isUpdated){
         log_d("XXXX Fix?:%i, Sats:%i, isUpdated:%i", gps_coord.fixAcquired, gps_coord.satellites, gps_coord.isUpdated);
-        display_pos = gps_coord.getPoint32();  // center display in gps coord
+        gps_pos_wc = gps_coord.getPoint32();  // center display in gps coord
         refresh_display();
         gps_coord.isUpdated = false;
       }
@@ -70,10 +71,10 @@ void loop()
       break;
     
     case DEVMODE_MOVE:
-      if( up_btn_pressed){    display_pos.y += 40*zoom_level; refresh_display(); }
-      if( down_btn_pressed){  display_pos.y -= 40*zoom_level; refresh_display(); }
-      if( left_btn_pressed){  display_pos.x -= 40*zoom_level; refresh_display(); }
-      if( right_btn_pressed){ display_pos.x += 40*zoom_level; refresh_display(); }
+      if( up_btn_pressed){    gps_pos_wc.y += 40*zoom_level; refresh_display(); }
+      if( down_btn_pressed){  gps_pos_wc.y -= 40*zoom_level; refresh_display(); }
+      if( left_btn_pressed){  gps_pos_wc.x -= 40*zoom_level; refresh_display(); }
+      if( right_btn_pressed){ gps_pos_wc.x += 40*zoom_level; refresh_display(); }
       if( select_btn_pressed) mode = DEVMODE_ZOOM; 
       break;
     
@@ -82,7 +83,7 @@ void loop()
       if( down_btn_pressed && zoom_level > 1){      zoom_level -= 1; refresh_display(); }
       if( select_btn_pressed){ 
         mode = DEVMODE_NAV;
-        if( gps_coord.isValid) display_pos = gps_coord.getPoint32();
+        if( gps_coord.isValid) gps_pos_wc = gps_coord.getPoint32();
       }
       break;
 
