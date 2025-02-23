@@ -55,7 +55,7 @@ void fill_polygon( Polygon p, TFT_eSprite *spr) // scanline fill algorithm
 void draw( ViewArea& bufferArea, MemCache& memCache, TFT_eSprite *spr)
 {
   Polygon new_polygon;
-  spr->fillScreen( BACKGROUND_COLOR);
+  spr->fillSprite( BACKGROUND_COLOR);
   uint32_t total_time = millis();
   log_v("Draw start %i", total_time);
   for( const MapBlock* mblock: memCache.blocks){

@@ -92,20 +92,21 @@ void refresh_display()
 
   if( !buffer_valid[zoom_level] || !displayArea.bbox.contained_in( bufferArea[zoom_level].bbox) )
   {
-      // setCpuFrequencyMhz(240);
+      setCpuFrequencyMhz(240);
       bufferArea[zoom_level].setCenter( gps_pos_wc, SCREEN_BUFFER_WIDTH, SCREEN_BUFFER_HEIGHT);
       get_map_blocks( bufferArea[zoom_level].bbox, memCache);
       draw( bufferArea[zoom_level], memCache, spr[zoom_level]);
       buffer_valid[zoom_level] = true;
-      // setCpuFrequencyMhz(40);
+      setCpuFrequencyMhz(40);
   }
   
   // These values will be in sprite pixels (since map coordinate differences are divided by zoom_level).
   Point32 src = (displayArea.bbox.min - bufferArea[zoom_level].bbox.min) / zoom_level;
   
   // Push the corresponding portion of the sprite to the TFT.
+  setCpuFrequencyMhz(240);
   tft.writecommand(0x00);
-  spr[zoom_level]->pushSprite(0, 0, src.x, src.y, SCREEN_WIDTH, SCREEN_HEIGHT);
+  spr[zoom_level]->pushSprite(0, 0, src.x, SCREEN_HEIGHT - src.y, SCREEN_WIDTH, SCREEN_HEIGHT);
   tft.fillTriangle(
     SCREEN_WIDTH/2 - 4, SCREEN_HEIGHT/2 + 5, 
     SCREEN_WIDTH/2 + 4, SCREEN_HEIGHT/2 + 5, 
@@ -113,6 +114,7 @@ void refresh_display()
     RED);
   tft_header();
   tft_footer();
+  setCpuFrequencyMhz(40);
   log_d("pushSprite done");
 }
 
