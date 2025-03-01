@@ -57,7 +57,7 @@ void draw( ViewArea& bufferArea, MemCache& memCache, TFT_eSprite *spr)
   Polygon new_polygon;
   spr->fillSprite( BACKGROUND_COLOR);
   uint32_t total_time = millis();
-  log_v("Draw start %i", total_time);
+  LOGV("Draw start %i", total_time);
   for( const MapBlock* mblock: memCache.blocks){
     uint32_t block_time = millis();
     if( !mblock->inView) continue;
@@ -84,7 +84,7 @@ void draw( ViewArea& bufferArea, MemCache& memCache, TFT_eSprite *spr)
       }
       fill_polygon( new_polygon, spr);      
     }
-    log_v("Block polygons done %i ms", millis()-block_time);
+    LOGV("Block polygons done %i ms", millis()-block_time);
     block_time = millis();
     
     ////// Lines
@@ -101,11 +101,11 @@ void draw( ViewArea& bufferArea, MemCache& memCache, TFT_eSprite *spr)
           (line.width/zoom_level) ?: 1, line.color, line.color);
       }
     }
-    log_v("Block lines done %i ms", millis()-block_time);
+    LOGV("Block lines done %i ms", millis()-block_time);
   }
-  log_v("Total %i ms", millis()-total_time);
+  LOGV("Total %i ms", millis()-total_time);
 
-  log_d("Draw done! %i", millis());
+  LOGD("Draw done! %i", millis());
 }
 
 void stats( ViewArea& viewPort, MapBlock& mblock)
@@ -123,7 +123,7 @@ void stats( ViewArea& viewPort, MapBlock& mblock)
       // if( map_bbox_mc.contains_point( p)) in_map++;
     }
   }
-  log_i("Polygons points.  in_screen: %i, in_map: %i,  total: %i", in_screen, in_map, points_total);
+  LOGI("Polygons points.  in_screen: %i, in_map: %i,  total: %i", in_screen, in_map, points_total);
   
   ////// Lines 
   in_screen = 0;
@@ -136,5 +136,5 @@ void stats( ViewArea& viewPort, MapBlock& mblock)
       // if( map_bbox_mc.contains_point( p)) in_map++;
     }
   }
-  log_i("Lines points. in_screen: %i,  in_map: %i,  total: %i", in_screen, in_map, points_total);
+  LOGI("Lines points. in_screen: %i,  in_map: %i,  total: %i", in_screen, in_map, points_total);
 }

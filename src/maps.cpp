@@ -56,16 +56,16 @@ int16_t parse_int16( ReadBufferingStream& file)
   }
   num[i] = '\0';
   if( c != ';' && c != ',' && c != '\n'){
-    log_e("parse_int16 error: %c %i", c, c);
-    log_e("Num: [%s]", num);
+    LOGE("parse_int16 error: %c %i", c, c);
+    LOGE("Num: [%s]", num);
     while(1);
   }
   try{
     return std::stoi( num);
   } catch( std::invalid_argument){
-    log_e("parse_int16 invalid_argument: [%c] [%s]", c, num);
+    LOGE("parse_int16 invalid_argument: [%c] [%s]", c, num);
   } catch( std::out_of_range){
-    log_e("parse_int16 out_of_range: [%c] [%s]", c, num);
+    LOGE("parse_int16 out_of_range: [%c] [%s]", c, num);
   }
   return -1;
 }
@@ -101,11 +101,11 @@ void parse_coords( ReadBufferingStream& file, std::vector<Point16>& points)
       parse_str_until( file, ';', str);
       assert( str[0] != '\0');
       point.y = (int16_t )std::stoi( str);
-      // log_v("point: %i %i", point.x, point.y);
+      // LOGV("point: %i %i", point.x, point.y);
     } catch( std::invalid_argument){
-      log_e("parse_coords invalid_argument: %s", str);
+      LOGE("parse_coords invalid_argument: %s", str);
     } catch( std::out_of_range){
-      log_e("parse_coords out_of_range: %s", str);
+      LOGE("parse_coords out_of_range: %s", str);
     }
     points.push_back( point);
   }
@@ -114,7 +114,7 @@ void parse_coords( ReadBufferingStream& file, std::vector<Point16>& points)
 
 MapBlock* read_map_block( String file_name)
 {
-  log_d("read_map_block: %s", file_name.c_str());
+  LOGD("read_map_block: %s", file_name.c_str());
   char c;
   char str[30];
   MapBlock* mblock = new MapBlock();
@@ -129,33 +129,33 @@ MapBlock* read_map_block( String file_name)
   // read polygons
   parse_str_until( file, ':', str);
   if( strcmp( str, "Polygons") != 0) {
-    log_e("Map error. Expected Polygons instead of: %s", str);
+    LOGE("Map error. Expected Polygons instead of: %s", str);
     while(0);
   }
   int16_t count = parse_int16( file);
   assert( count > 0);
   line++;
-  log_v("count: %i", count);
+  LOGV("count: %i", count);
 
   uint32_t total_points = 0;
   Polygon polygon;
   Point16 p;
   int16_t maxzoom;
   while( count > 0){
-    // log_v("line: %i", line);
+    // LOGV("line: %i", line);
     parse_str_until( file, '\n', str); // color
     assert( str[0] == '0' && str[1] == 'x');
     polygon.color = (uint16_t )std::stoul( str, nullptr, 16);
-    // log_v("polygon.color: %i", polygon.color);
+    // LOGV("polygon.color: %i", polygon.color);
     line++;
     parse_str_until( file, '\n', str); // maxzoom
     polygon.maxzoom = str[0] ? (uint8_t )std::stoi( str) : MAX_ZOOM;
-    // log_v("polygon.maxzoom: %i", polygon.maxzoom);
+    // LOGV("polygon.maxzoom: %i", polygon.maxzoom);
     line++;
 
     parse_str_until( file, ':', str);
     if( strcmp( str, "bbox") != 0){
-      log_e("bbox error tag. Line %i : %s", line, str);
+      LOGE("bbox error tag. Line %i : %s", line, str);
       while(true);
     }
     polygon.bbox.min.x = parse_int16( file);
@@ -167,7 +167,7 @@ MapBlock* read_map_block( String file_name)
     polygon.points.clear();
     parse_str_until( file, ':', str);
     if( strcmp( str, "coords") != 0){
-      log_e("coords error tag. Line %i : %s", line, str);
+      LOGE("coords error tag. Line %i : %s", line, str);
       while(true);
     }
     parse_coords( file, polygon.points);
@@ -180,15 +180,15 @@ MapBlock* read_map_block( String file_name)
   
   // read lines
   parse_str_until( file, ':', str);
-  if( strcmp( str, "Polylines") != 0) log_e("Map error. Expected Polylines instead of: %s", str);
+  if( strcmp( str, "Polylines") != 0) LOGE("Map error. Expected Polylines instead of: %s", str);
   count = parse_int16( file);
   assert( count > 0);
   line++;
-  log_v("count: %i", count);
+  LOGV("count: %i", count);
   
   Polyline polyline;
   while( count > 0){
-    // log_v("line: %i", line);
+    // LOGV("line: %i", line);
     parse_str_until( file, '\n', str); // color
     assert( str[0] == '0' && str[1] == 'x');
     polyline.color = (uint16_t )std::stoul( str, nullptr, 16);
@@ -202,7 +202,7 @@ MapBlock* read_map_block( String file_name)
 
     parse_str_until( file, ':', str);
     if( strcmp( str, "bbox") != 0){
-      log_e("bbox error tag. Line %i : %s", line, str);
+      LOGE("bbox error tag. Line %i : %s", line, str);
       while(true);
     }
 
@@ -212,21 +212,21 @@ MapBlock* read_map_block( String file_name)
     polyline.bbox.max.y = parse_int16( file);
 
     // if( line > 4050){
-    //   log_e("polyline.bbox %i %i %i %i", polyline.bbox.min.x, polyline.bbox.min.y,polyline.bbox.max.x, polyline.bbox.max.y);
+    //   LOGE("polyline.bbox %i %i %i %i", polyline.bbox.min.x, polyline.bbox.min.y,polyline.bbox.max.x, polyline.bbox.max.y);
     // }
     line++;
 
     polyline.points.clear();
     parse_str_until( file, ':', str);
     if( strcmp( str, "coords") != 0){
-      log_v("coords tag. Line %i : %s", line, str);
+      LOGV("coords tag. Line %i : %s", line, str);
       while(true);
     }
     parse_coords( file, polyline.points);
     line++;
     // if( line > 4050 && file_name == "/mymap/3_77/6_9"){
     //   for( Point16 p: polyline.points){
-    //     log_v("p.x, p.y %i %i", p.x, p.y);
+    //     LOGV("p.x, p.y %i %i", p.x, p.y);
     //   }
     // }
     mblock->polylines.push_back( polyline);
@@ -244,7 +244,7 @@ MapBlock* read_map_block( String file_name)
 /// @param memCache map blocks in memory
 void get_map_blocks( BBox& bbox, MemCache& memCache)
 {
-  log_d("get_map_blocks %i", millis());
+  LOGD("get_map_blocks %i", millis());
   for( MapBlock* block: memCache.blocks){
     block->inView = false;
   }
@@ -264,7 +264,7 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
     }
     if( found) continue;
     
-    log_d("load from disk (%i, %i) %i", block_min_x, block_min_y, millis());
+    LOGD("load from disk (%i, %i) %i", block_min_x, block_min_y, millis());
     // block is not in memory => load from disk
     int32_t block_x = (block_min_x >> MAPBLOCK_SIZE_BITS) & MAPFOLDER_MASK;
     int32_t block_y = (block_min_y >> MAPBLOCK_SIZE_BITS) & MAPFOLDER_MASK;
@@ -277,11 +277,11 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
     // check if cache is full
     if( memCache.blocks.size() >= MAPBLOCKS_MAX){
       // remove first one, the oldest
-      log_d("Deleteing freeHeap: %i", esp_get_free_heap_size());
+      LOGD("Deleteing freeHeap: %i", esp_get_free_heap_size());
       MapBlock* first_block = memCache.blocks.front();
       delete first_block; // free memory
       memCache.blocks.erase( memCache.blocks.begin()); // remove pointer from the vector
-      log_d("Deleted freeHeap: %i", esp_get_free_heap_size());
+      LOGD("Deleted freeHeap: %i", esp_get_free_heap_size());
     }
 
     MapBlock* new_block = read_map_block( file_name);
@@ -290,11 +290,11 @@ void get_map_blocks( BBox& bbox, MemCache& memCache)
     memCache.blocks.push_back( new_block); // add the block to the memory cache
     assert( memCache.blocks.size() <= MAPBLOCKS_MAX);
 
-    log_d("Block readed from SD card: %p", new_block);
-    log_d("FreeHeap: %i", esp_get_free_heap_size());
+    LOGD("Block readed from SD card: %p", new_block);
+    LOGD("FreeHeap: %i", esp_get_free_heap_size());
   
   }   
-  log_d("memCache size: %i %i", memCache.blocks.size(), millis());
+  LOGD("memCache size: %i %i", memCache.blocks.size(), millis());
 }
 
 

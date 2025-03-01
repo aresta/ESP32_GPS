@@ -5,16 +5,10 @@
 #include "env.h"
 
 HardwareSerial serialGPS(1);
-uint8_t zoom_level = PIXEL_SIZE_DEF; // zoom_level = 1 corresponds aprox to 1 meter / pixel
-Coord gps_coord;
-
-/**
- * @brief GPS position in world coordinates.
- * 
- */
-Point32 gps_pos_wc;
-
-uint8_t mode = DEVMODE_NAV;
+uint8_t zoom_level = PIXEL_SIZE_DEF; /// @brief zoom_level = 1 corresponds aprox to 1 meter / pixel
+Coord gps_coord; /// @brief Holds the current gps data
+Point32 gps_pos_wc; /// @brief GPS position in world coordinates.
+uint8_t mode = DEVMODE_NAV; /// @brief Current device mode
 
 bool select_btn_pressed = false;
 bool up_btn_pressed = false;
@@ -26,23 +20,23 @@ bool menu_btn_long_pressed = false;
 
 void setup()
 {
-  log_i("Starting..."); 
-  Serial.begin(115200);
+  #if CORE_DEBUG_LEVEL > 0
+    LOGI("Starting..."); 
+    Serial.begin(115200);
+  #endif
   serialGPS.begin( 9600, SERIAL_8N1, GPS_TX, GPS_RX);
   delay(50);
 
   init_io(); // initialize GPIO's, display, power saving, etc
 
-  log_i("Waiting for satellites...");
+  LOGI("Waiting for satellites...");
   // serialGPS.println("$PMTK225,0*2B"); // set 'full on' mode
   // serialGPS.println("$PMTK225,2,300,1000*1F"); // enable Periodic Mode (1-second interval, 300ms on-time)
   serialGPS.println("$PMTK225,8*23"); // set 'Alwayslocate' mode
 
   // disable extra NMEA sentences. Only enables the $GPGGA sentence (position data)
   serialGPS.println("$PMTK314,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0*29");
-
   gps_pos_wc = Point32( INIT_POS);  // TODO: get last position from flash memory
-
   refresh_display();
 }
 
@@ -54,20 +48,12 @@ void loop()
     case DEVMODE_NAV:
       getPosition();
       if( gps_coord.isValid && gps_coord.isUpdated){
-        log_d("XXXX Fix?:%i, Sats:%i, isUpdated:%i", gps_coord.fixAcquired, gps_coord.satellites, gps_coord.isUpdated);
+        LOGD("XXXX Fix?:%i, Sats:%i, isUpdated:%i", gps_coord.fixAcquired, gps_coord.satellites, gps_coord.isUpdated);
         gps_pos_wc = gps_coord.getPoint32();  // center display in gps coord
         refresh_display();
         gps_coord.isUpdated = false;
       }
-      if( select_btn_pressed){
-        mode = DEVMODE_MOVE;
-      } else {
-        // esp_sleep_enable_timer_wakeup( 100 * 1000); // sleep some ms
-        // gpio_wakeup_enable((gpio_num_t )SELECT_BUTTON, GPIO_INTR_LOW_LEVEL);
-        // esp_light_sleep_start();
-        // esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
-        // gpio_wakeup_disable((gpio_num_t )SELECT_BUTTON);
-      }
+      if( select_btn_pressed){ mode = DEVMODE_MOVE; } 
       break;
     
     case DEVMODE_MOVE:
@@ -92,9 +78,9 @@ void loop()
       // sleep...
       // esp_sleep_enable_timer_wakeup( 20 * 1000000);
       
-      // serialGPS.println("$PMTK161,0*28"); // enter standby Mode
-      serialGPS.println("$PMTK225,8*23"); // always locate mode
-      log_i("esp_light_sleep_start");
+      serialGPS.println("$PMTK161,0*28"); // enter standby Mode
+      // serialGPS.println("$PMTK225,8*23"); // always locate mode
+      LOGI("esp_light_sleep_start");
       delay(200); // debounce button
       esp_light_sleep_start();
 

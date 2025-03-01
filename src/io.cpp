@@ -18,6 +18,7 @@ extern bool right_btn_pressed;
 extern bool menu_btn_short_pressed;
 extern bool menu_btn_long_pressed;
 
+/// @brief Initialize GPIO's, TFT display, sleep mode, power savings
 void init_io()
 {
   // Configure GPIO's
@@ -58,18 +59,19 @@ void init_io()
     spr[i]->createSprite( SCREEN_BUFFER_WIDTH, SCREEN_BUFFER_HEIGHT);
     spr[i]->fillScreen(CYAN);
     spr[i]->setTextColor(TFT_BLACK);
-    log_d("FreeHeap: %i", esp_get_free_heap_size());
+    LOGD("FreeHeap: %i", esp_get_free_heap_size());
   }
 
   tft_msg("Initializing...");
-  log_i("Opening SD Card...");
+  LOGI("Opening SD Card...");
   if(!init_sd_card()) {
-    log_e("Error: SD Card Mount Failed!");
+    LOGE("Error: SD Card Mount Failed!");
     tft_msg("Error: SD Card Mount Failed!");
     while(true);
   }
 }
 
+/// @brief read buttons state with debounce and long press support
 void check_buttons()
 {
   const uint32_t debounceDelay = 150; // ms
@@ -78,6 +80,7 @@ void check_buttons()
   static uint16_t menu_button_long_delay = 800; // ms 
 
   if(( millis() - lastDebounceTime) < debounceDelay) return;
+  lastDebounceTime = millis();
 
   if( digitalRead( SELECT_BUTTON) == LOW) select_btn_pressed = true;
   else if( digitalRead( UP_BUTTON) == LOW) up_btn_pressed = true;
@@ -97,13 +100,12 @@ void check_buttons()
     menu_btn_short_pressed = true;
     menu_button_press_start = 0;
   }
-lastDebounceTime = millis();
 }
 
 void printFreeMem()
 {
-  log_i("FreeHeap: %i", esp_get_free_heap_size());
-  log_i("Heap minimum_free_heap_size: %i", esp_get_minimum_free_heap_size());
-  log_i("Heap largest_free_block: %i", heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
-  log_i("Task watermark: %i", uxTaskGetStackHighWaterMark(NULL));
+  LOGI("FreeHeap: %i", esp_get_free_heap_size());
+  LOGI("Heap minimum_free_heap_size: %i", esp_get_minimum_free_heap_size());
+  LOGI("Heap largest_free_block: %i", heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+  LOGI("Task watermark: %i", uxTaskGetStackHighWaterMark(NULL));
 }

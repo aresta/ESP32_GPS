@@ -78,11 +78,12 @@ void tft_msg( const char *msg)
   tft.print( msg);
 }
 
+/// @brief Updates the display with the corresponging area from the buffer. Refresh the buffer if needed.
 void refresh_display() 
 {
-  log_d("Fix?:%i, Sats:%i, isUpdated:%i", gps_coord.fixAcquired, gps_coord.satellites, gps_coord.isUpdated);
-  log_d("lat:%f, lon:%f", gps_coord.lat, gps_coord.lng);
-  log_d("Altitude: %i", gps_coord.altitude);
+  LOGD("Fix?:%i, Sats:%i, isUpdated:%i", gps_coord.fixAcquired, gps_coord.satellites, gps_coord.isUpdated);
+  LOGD("lat:%f, lon:%f", gps_coord.lat, gps_coord.lng);
+  LOGD("Altitude: %i", gps_coord.altitude);
   
   // Set up displayArea based on current GPS position and display dimensions.
   displayArea.setCenter( gps_pos_wc, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -90,9 +91,9 @@ void refresh_display()
   static bool buffer_valid[MAX_ZOOM+1] = { false }; // per zoom level cache
   static ViewArea bufferArea[MAX_ZOOM+1];
 
-  if( !buffer_valid[zoom_level] || !displayArea.bbox.contained_in( bufferArea[zoom_level].bbox) )
-  {
-      setCpuFrequencyMhz(240);
+  // Check if we need to update the buffer
+  if( !buffer_valid[zoom_level] || !displayArea.bbox.contained_in( bufferArea[zoom_level].bbox) ){
+      setCpuFrequencyMhz(240); // speed up
       bufferArea[zoom_level].setCenter( gps_pos_wc, SCREEN_BUFFER_WIDTH, SCREEN_BUFFER_HEIGHT);
       get_map_blocks( bufferArea[zoom_level].bbox, memCache);
       draw( bufferArea[zoom_level], memCache, spr[zoom_level]);
@@ -100,22 +101,26 @@ void refresh_display()
       setCpuFrequencyMhz(40);
   }
   
-  // These values will be in sprite pixels (since map coordinate differences are divided by zoom_level).
+  setCpuFrequencyMhz(80);
+  // Calculate the square from the buffer to be pushed to the display
   Point32 src = (displayArea.bbox.min - bufferArea[zoom_level].bbox.min) / zoom_level;
   
   // Push the corresponding portion of the sprite to the TFT.
-  setCpuFrequencyMhz(240);
-  tft.writecommand(0x00);
+  tft.writecommand(0x00); // workaround to avoid strange display behaviours
   spr[zoom_level]->pushSprite(0, 0, src.x, SCREEN_HEIGHT - src.y, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+  // draw the position triangle in the center of the display
   tft.fillTriangle(
     SCREEN_WIDTH/2 - 4, SCREEN_HEIGHT/2 + 5, 
     SCREEN_WIDTH/2 + 4, SCREEN_HEIGHT/2 + 5, 
     SCREEN_WIDTH/2,   SCREEN_HEIGHT/2 - 6, 
     RED);
+  
+  // refreash header and footer
   tft_header();
   tft_footer();
   setCpuFrequencyMhz(40);
-  log_d("pushSprite done");
+  LOGD("pushSprite done");
 }
 
 
