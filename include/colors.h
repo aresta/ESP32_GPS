@@ -18,4 +18,4 @@ const uint16_t GRAYCLEAR2       = 0xD69A;
 const uint16_t BROWN            = 0xAB00;
 const uint16_t YELLOW           = 0xFFF1;
 const uint16_t YELLOWCLEAR      = 0xFFF5;
-const uint16_t BACKGROUND_COLOR = 0xEF5D;
+const uint16_t BACKGROUND_COLOR = 0xC618;

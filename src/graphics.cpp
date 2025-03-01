@@ -13,6 +13,7 @@ extern Coord gps_coord;
 extern uint8_t mode;
 extern uint8_t zoom_level;
 extern TFT_eSprite *spr[];
+extern bool show_header_footer;
 
 void ViewArea::setCenter(Point32& pcenter, int16_t width, int16_t eight) {
   center = pcenter;
@@ -117,8 +118,10 @@ void refresh_display()
     RED);
   
   // refreash header and footer
-  tft_header();
-  tft_footer();
+  if( show_header_footer){
+    tft_header();
+    tft_footer();
+  }
   setCpuFrequencyMhz(40);
   LOGD("pushSprite done");
 }

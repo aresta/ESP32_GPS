@@ -17,6 +17,7 @@ bool left_btn_pressed = false;
 bool right_btn_pressed = false;
 bool menu_btn_short_pressed = false;
 bool menu_btn_long_pressed = false;
+bool show_header_footer = true;
 
 void setup()
 {
@@ -47,13 +48,14 @@ void loop()
   switch( mode){
     case DEVMODE_NAV:
       getPosition();
+      if( menu_btn_short_pressed) show_header_footer = !show_header_footer;
       if( gps_coord.isValid && gps_coord.isUpdated){
         LOGD("XXXX Fix?:%i, Sats:%i, isUpdated:%i", gps_coord.fixAcquired, gps_coord.satellites, gps_coord.isUpdated);
         gps_pos_wc = gps_coord.getPoint32();  // center display in gps coord
         refresh_display();
         gps_coord.isUpdated = false;
       }
-      if( select_btn_pressed){ mode = DEVMODE_MOVE; } 
+      if( select_btn_pressed && show_header_footer){ mode = DEVMODE_MOVE; } 
       break;
     
     case DEVMODE_MOVE:
@@ -62,15 +64,24 @@ void loop()
       if( left_btn_pressed){  gps_pos_wc.x -= 40*zoom_level; refresh_display(); }
       if( right_btn_pressed){ gps_pos_wc.x += 40*zoom_level; refresh_display(); }
       if( select_btn_pressed) mode = DEVMODE_ZOOM; 
+      if( menu_btn_short_pressed){
+        mode = DEVMODE_NAV;
+        show_header_footer = false;
+        if( gps_coord.isValid) gps_pos_wc = gps_coord.getPoint32();
+      }         
       break;
     
     case DEVMODE_ZOOM:
       if( up_btn_pressed && zoom_level < MAX_ZOOM){ zoom_level += 1; refresh_display(); }
       if( down_btn_pressed && zoom_level > 1){      zoom_level -= 1; refresh_display(); }
       if( select_btn_pressed){ 
-        mode = DEVMODE_NAV;
-        if( gps_coord.isValid) gps_pos_wc = gps_coord.getPoint32();
+        mode = DEVMODE_MOVE;
       }
+      if( menu_btn_short_pressed){
+        mode = DEVMODE_NAV;
+        show_header_footer = false;
+        if( gps_coord.isValid) gps_pos_wc = gps_coord.getPoint32();
+      }  
       break;
 
     case DEVMODE_LOWPOW: // TODO
@@ -83,17 +94,18 @@ void loop()
       LOGI("esp_light_sleep_start");
       delay(500); // debounce button
       esp_light_sleep_start();
-
-      // wakeup_reason = esp_sleep_get_wakeup_cause();
+      // ZZZZ...
+      // Wake up!
       serialGPS.println("$PMTK225,0*2B"); // back to 'full on' mode
       // serialGPS.println("$PMTK225,8*23"); // set 'Alwayslocate' mode
       mode = DEVMODE_NAV;
+      delay(300); // debounce button
       ledcWrite(0, 128); // set display 50%
       refresh_display(); // Check if needed
       break;
   }
 
-  if( select_btn_pressed) refresh_display();  // TODO: refresh only header
+  if( menu_btn_short_pressed || select_btn_pressed) refresh_display();  // TODO: refresh only header
   up_btn_pressed = false;
   down_btn_pressed = false;
   left_btn_pressed = false;
