@@ -81,7 +81,7 @@ void loop()
       serialGPS.println("$PMTK161,0*28"); // enter standby Mode
       // serialGPS.println("$PMTK225,8*23"); // always locate mode
       LOGI("esp_light_sleep_start");
-      delay(200); // debounce button
+      delay(500); // debounce button
       esp_light_sleep_start();
 
       // wakeup_reason = esp_sleep_get_wakeup_cause();
