@@ -120,8 +120,8 @@ MapBlock* read_map_block( String file_name)
   MapBlock* mblock = new MapBlock();
   fs::File file_ = SD.open( file_name + ".fmp");
   if( !file_){
-    header_msg("Map file not found in folder: " + base_folder);
-    while(true);
+    LOGE("Map file not found in folder: %s", base_folder);
+    return NULL;
   }
   ReadBufferingStream file{ file_, 2000};
   uint32_t line = 0;
@@ -172,6 +172,7 @@ MapBlock* read_map_block( String file_name)
     }
     parse_coords( file, polygon.points);
     line++;
+    if( esp_get_free_heap_size() < 200*2000) return NULL;
     mblock->polygons.push_back( polygon);
     total_points += polygon.points.size();
     count--;
@@ -229,6 +230,7 @@ MapBlock* read_map_block( String file_name)
     //     LOGV("p.x, p.y %i %i", p.x, p.y);
     //   }
     // }
+    if( esp_get_free_heap_size() < 200*2000) return NULL;
     mblock->polylines.push_back( polyline);
     total_points += polyline.points.size();
     count--;
@@ -276,7 +278,7 @@ void get_map_blocks( BBox& bufferArea, MemCache& memCache)
       String file_name = base_folder + folder_name +"/"+ block_x +"_"+ block_y; //  /maps/123_456/777_888
 
       // check if cache is full
-      if( memCache.blocks.size() >= MAPBLOCKS_MAX){
+      while( memCache.blocks.size() >= MAPBLOCKS_MAX || esp_get_free_heap_size() < MIN_FREE_HEAP){
         // remove first one, the oldest
         LOGD("Deleting block. FreeHeap: %i", esp_get_free_heap_size());
         MapBlock* first_block = memCache.blocks.front();
@@ -287,6 +289,7 @@ void get_map_blocks( BBox& bufferArea, MemCache& memCache)
       LOGD("FreeHeap: %i", esp_get_free_heap_size());
 
       MapBlock* new_block = read_map_block( file_name);
+      if( !new_block) continue; // block not found in SD card
       new_block->inView = true;
       new_block->offset = Point32( point.x, point.y);
       memCache.blocks.push_back( new_block); // add the block to the memory cache

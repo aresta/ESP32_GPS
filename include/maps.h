@@ -7,7 +7,8 @@
 #include <map>
 #include "graphics.h"
 
-#define MAPBLOCKS_MAX 25        // max blocks in memory
+#define MAPBLOCKS_MAX 40        // max blocks in memory
+#define MIN_FREE_HEAP 500*1000  // min heap free space in bytes, below this value it will release map blocks
 #define MAPBLOCK_SIZE_BITS 12   // 4096 x 4096 coords (~meters) per block  
 #define MAPFOLDER_SIZE_BITS 4   // 16 x 16 map blocks per folder
 #define MAPBLOCK_SIDE_SIZE (1 << MAPBLOCK_SIZE_BITS)   // 4096   

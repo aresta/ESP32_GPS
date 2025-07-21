@@ -76,14 +76,14 @@ void loop()
     case DEVMODE_ZOOM:
       if( up_btn_pressed && zoom_level < MAX_ZOOM){ 
         if( zoom_level < 4 ) zoom_level += 1;
-        else if( zoom_level < 10 ) zoom_level += 2;
+        else if( zoom_level < 8 ) zoom_level += 2;
         else zoom_level += 4;
         if( zoom_level > MAX_ZOOM) zoom_level = MAX_ZOOM;
         refresh_display(); 
       }
       if( down_btn_pressed && zoom_level > 1){      
         if( zoom_level <= 4 ) zoom_level -= 1;
-        else if( zoom_level <= 10 ) zoom_level -= 2;
+        else if( zoom_level <= 8 ) zoom_level -= 2;
         else zoom_level -= 4;
         if( zoom_level < 1) zoom_level = 1;
         refresh_display(); 
