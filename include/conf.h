@@ -6,7 +6,7 @@
 #define SCREEN_BUFFER_WIDTH (SCREEN_WIDTH * 2)      /// @brief Display buffer size in pixels
 #define SCREEN_BUFFER_HEIGHT (SCREEN_HEIGHT * 2)    /// @brief Display buffer size in pixels
 #define PIXEL_SIZE_DEF 2  /// @brief initial pixel / world meters relation (zoom)
-#define MAX_ZOOM 7
+#define MAX_ZOOM 30
 
 
 // Buttons GPIO nums

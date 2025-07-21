@@ -22,12 +22,12 @@ bool show_header_footer = true;
 void setup()
 {
   #if CORE_DEBUG_LEVEL > 0
-    LOGI("Starting..."); 
     Serial.begin(115200);
-  #endif
+    LOGI("Starting..."); 
+    #endif
   serialGPS.begin( 9600, SERIAL_8N1, GPS_TX, GPS_RX);
   delay(50);
-
+  
   init_io(); // initialize GPIO's, display, power saving, etc
 
   LOGI("Waiting for satellites...");
@@ -38,6 +38,8 @@ void setup()
   // disable extra NMEA sentences. Only enables the $GPGGA sentence (position data)
   serialGPS.println("$PMTK314,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0*29");
   gps_pos_wc = Point32( INIT_POS);  // TODO: get last position from flash memory
+
+  delay(500);
   refresh_display();
 }
 
@@ -72,8 +74,20 @@ void loop()
       break;
     
     case DEVMODE_ZOOM:
-      if( up_btn_pressed && zoom_level < MAX_ZOOM){ zoom_level += 1; refresh_display(); }
-      if( down_btn_pressed && zoom_level > 1){      zoom_level -= 1; refresh_display(); }
+      if( up_btn_pressed && zoom_level < MAX_ZOOM){ 
+        if( zoom_level < 4 ) zoom_level += 1;
+        else if( zoom_level < 10 ) zoom_level += 2;
+        else zoom_level += 4;
+        if( zoom_level > MAX_ZOOM) zoom_level = MAX_ZOOM;
+        refresh_display(); 
+      }
+      if( down_btn_pressed && zoom_level > 1){      
+        if( zoom_level <= 4 ) zoom_level -= 1;
+        else if( zoom_level <= 10 ) zoom_level -= 2;
+        else zoom_level -= 4;
+        if( zoom_level < 1) zoom_level = 1;
+        refresh_display(); 
+      }
       if( select_btn_pressed){ 
         mode = DEVMODE_MOVE;
       }

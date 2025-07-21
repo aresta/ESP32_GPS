@@ -12,7 +12,7 @@ extern Point32 gps_pos_wc;
 extern Coord gps_coord; 
 extern uint8_t mode;
 extern uint8_t zoom_level;
-extern TFT_eSprite *spr[];
+extern TFT_eSprite *spr;
 extern bool show_header_footer;
 
 void ViewArea::setCenter(Point32& pcenter, int16_t width, int16_t eight) {
@@ -82,33 +82,33 @@ void tft_msg( const char *msg)
 /// @brief Updates the display with the corresponging area from the buffer. Refresh the buffer if needed.
 void refresh_display() 
 {
-  LOGD("Fix?:%i, Sats:%i, isUpdated:%i", gps_coord.fixAcquired, gps_coord.satellites, gps_coord.isUpdated);
-  LOGD("lat:%f, lon:%f", gps_coord.lat, gps_coord.lng);
-  LOGD("Altitude: %i", gps_coord.altitude);
+  LOGV("Fix?:%i, Sats:%i, isUpdated:%i", gps_coord.fixAcquired, gps_coord.satellites, gps_coord.isUpdated);
+  LOGV("lat:%f, lon:%f", gps_coord.lat, gps_coord.lng);
+  LOGV("Altitude: %i", gps_coord.altitude);
   
   // Set up displayArea based on current GPS position and display dimensions.
   displayArea.setCenter( gps_pos_wc, SCREEN_WIDTH, SCREEN_HEIGHT);
   
-  static bool buffer_valid[MAX_ZOOM+1] = { false }; // per zoom level cache
-  static ViewArea bufferArea[MAX_ZOOM+1];
+  static uint8_t prev_zoom_level = 0;
+  static ViewArea bufferArea;
 
   // Check if we need to update the buffer
-  if( !buffer_valid[zoom_level] || !displayArea.bbox.contained_in( bufferArea[zoom_level].bbox) ){
+  if( zoom_level != prev_zoom_level || !displayArea.bbox.contained_in( bufferArea.bbox)){
       setCpuFrequencyMhz(240); // speed up
-      bufferArea[zoom_level].setCenter( gps_pos_wc, SCREEN_BUFFER_WIDTH, SCREEN_BUFFER_HEIGHT);
-      get_map_blocks( bufferArea[zoom_level].bbox, memCache);
-      draw( bufferArea[zoom_level], memCache, spr[zoom_level]);
-      buffer_valid[zoom_level] = true;
+      bufferArea.setCenter( gps_pos_wc, SCREEN_BUFFER_WIDTH, SCREEN_BUFFER_HEIGHT);
+      get_map_blocks( bufferArea.bbox, memCache);
+      draw( bufferArea, memCache, spr);
       setCpuFrequencyMhz(40);
   }
+  prev_zoom_level = zoom_level;
   
   setCpuFrequencyMhz(80);
   // Calculate the square from the buffer to be pushed to the display
-  Point32 src = (displayArea.bbox.min - bufferArea[zoom_level].bbox.min) / zoom_level;
+  Point32 src = (displayArea.bbox.min - bufferArea.bbox.min) / zoom_level;
   
   // Push the corresponding portion of the sprite to the TFT.
   tft.writecommand(0x00); // workaround to avoid strange display behaviours
-  spr[zoom_level]->pushSprite(0, 0, src.x, SCREEN_HEIGHT - src.y, SCREEN_WIDTH, SCREEN_HEIGHT);
+  spr->pushSprite(0, 0, src.x, SCREEN_HEIGHT - src.y, SCREEN_WIDTH, SCREEN_HEIGHT);
 
   // draw the position triangle in the center of the display
   tft.fillTriangle(

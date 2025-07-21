@@ -102,10 +102,19 @@ void draw( ViewArea& bufferArea, MemCache& memCache, TFT_eSprite *spr)
       }
     }
     LOGV("Block lines done %i ms", millis()-block_time);
+
+    // // DEBUG: draw block bbox
+    // Point32 block_p1 = Point32( 0, 0).toScreenCoord( zoom_level, offset_fc2sc);
+    // Point32 block_p2 = Point32( MAPBLOCK_SIDE_SIZE, MAPBLOCK_SIDE_SIZE).toScreenCoord( zoom_level, offset_fc2sc);
+    // spr->drawWideLine( block_p1.x, block_p1.y, block_p1.x, block_p2.y, 2, RED, RED);
+    // spr->drawWideLine( block_p1.x, block_p2.y, block_p2.x, block_p2.y, 2, RED, RED);
+    // spr->drawWideLine( block_p2.x, block_p2.y, block_p2.x, block_p1.y, 2, RED, RED);
+    // spr->drawWideLine( block_p2.x, block_p1.y, block_p1.x, block_p1.y, 2, RED, RED);
+
   }
   LOGV("Total %i ms", millis()-total_time);
 
-  LOGD("Draw done! %i", millis());
+  LOGD("Draw done!");
 }
 
 void stats( ViewArea& viewPort, MapBlock& mblock)

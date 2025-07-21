@@ -242,59 +242,60 @@ MapBlock* read_map_block( String file_name)
 /// @brief Check which map blocks are needed to display the bbxos area, and load them from the SD card if needed 
 /// @param bbox area to be displayed
 /// @param memCache map blocks in memory
-void get_map_blocks( BBox& bbox, MemCache& memCache)
+void get_map_blocks( BBox& bufferArea, MemCache& memCache)
 {
-  LOGD("get_map_blocks %i", millis());
+  LOGD("get_map_blocks");
   for( MapBlock* block: memCache.blocks){
     block->inView = false;
   }
-  // loop the 4 corners of the bbox and find the files that contain them
-  for( Point32 point: { bbox.min, bbox.max, Point32( bbox.min.x, bbox.max.y), Point32( bbox.max.x, bbox.min.y) }){
-    bool found = false;
-    int32_t block_min_x = point.x & ( ~MAPBLOCK_MASK);
-    int32_t block_min_y = point.y & ( ~MAPBLOCK_MASK);
-    
-    // check if the needed block is already in memory
-    for( MapBlock* memblock : memCache.blocks){
-      if( block_min_x == memblock->offset.x && block_min_y == memblock->offset.y){
-        memblock->inView = true;
-        found = true;
-        break;
+
+  // loop all posible blocks in the bufferArea
+  for( int32_t px = bufferArea.min.x & ( ~MAPBLOCK_MASK); px <= bufferArea.max.x; px += MAPBLOCK_SIDE_SIZE){
+    for( int32_t py = bufferArea.min.y & ( ~MAPBLOCK_MASK); py <= bufferArea.max.y; py += MAPBLOCK_SIDE_SIZE){
+      Point32 point = Point32( px, py);
+
+      bool found = false;
+      // check if the needed block is already in memory
+      for( MapBlock* memblock : memCache.blocks){
+        if( point.x == memblock->offset.x && point.y == memblock->offset.y){
+          memblock->inView = true;
+          found = true;
+          break;
+        }
       }
+      if( found) continue;
+
+      LOGV("load from disk: point.x, point.y: (%i, %i)", point.x, point.y);
+      // block is not in memory => load from disk
+      int32_t block_x = (point.x >> MAPBLOCK_SIZE_BITS) & MAPFOLDER_MASK;
+      int32_t block_y = (point.y >> MAPBLOCK_SIZE_BITS) & MAPFOLDER_MASK;
+      int32_t folder_name_x = point.x >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
+      int32_t folder_name_y = point.y >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
+      char folder_name[12];
+      snprintf( folder_name, 9, "%+04d%+04d", folder_name_x, folder_name_y); // force sign and 4 chars per number
+      String file_name = base_folder + folder_name +"/"+ block_x +"_"+ block_y; //  /maps/123_456/777_888
+
+      // check if cache is full
+      if( memCache.blocks.size() >= MAPBLOCKS_MAX){
+        // remove first one, the oldest
+        LOGD("Deleting block. FreeHeap: %i", esp_get_free_heap_size());
+        MapBlock* first_block = memCache.blocks.front();
+        delete first_block; // free memory
+        memCache.blocks.erase( memCache.blocks.begin()); // remove pointer from the vector
+      }
+
+      LOGD("FreeHeap: %i", esp_get_free_heap_size());
+
+      MapBlock* new_block = read_map_block( file_name);
+      new_block->inView = true;
+      new_block->offset = Point32( point.x, point.y);
+      memCache.blocks.push_back( new_block); // add the block to the memory cache
+      assert( memCache.blocks.size() <= MAPBLOCKS_MAX);
+
+      LOGD("Block readed from SD card: %p", new_block);
     }
-    if( found) continue;
-    
-    LOGD("load from disk (%i, %i) %i", block_min_x, block_min_y, millis());
-    // block is not in memory => load from disk
-    int32_t block_x = (block_min_x >> MAPBLOCK_SIZE_BITS) & MAPFOLDER_MASK;
-    int32_t block_y = (block_min_y >> MAPBLOCK_SIZE_BITS) & MAPFOLDER_MASK;
-    int32_t folder_name_x = block_min_x >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
-    int32_t folder_name_y = block_min_y >> (MAPFOLDER_SIZE_BITS + MAPBLOCK_SIZE_BITS);
-    char folder_name[12];
-    snprintf( folder_name, 9, "%+04d%+04d", folder_name_x, folder_name_y); // force sign and 4 chars per number
-    String file_name = base_folder + folder_name +"/"+ block_x +"_"+ block_y; //  /maps/123_456/777_888
-
-    // check if cache is full
-    if( memCache.blocks.size() >= MAPBLOCKS_MAX){
-      // remove first one, the oldest
-      LOGD("Deleteing freeHeap: %i", esp_get_free_heap_size());
-      MapBlock* first_block = memCache.blocks.front();
-      delete first_block; // free memory
-      memCache.blocks.erase( memCache.blocks.begin()); // remove pointer from the vector
-      LOGD("Deleted freeHeap: %i", esp_get_free_heap_size());
-    }
-
-    MapBlock* new_block = read_map_block( file_name);
-    new_block->inView = true;
-    new_block->offset = Point32( block_min_x, block_min_y);
-    memCache.blocks.push_back( new_block); // add the block to the memory cache
-    assert( memCache.blocks.size() <= MAPBLOCKS_MAX);
-
-    LOGD("Block readed from SD card: %p", new_block);
-    LOGD("FreeHeap: %i", esp_get_free_heap_size());
-  
   }   
-  LOGD("memCache size: %i %i", memCache.blocks.size(), millis());
+  LOGD("memCache size: %i", memCache.blocks.size());
 }
 
 
